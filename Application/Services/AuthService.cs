@@ -17,6 +17,9 @@ public class AuthService
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             return false;
 
+        if (!MeetsPasswordStrength(password))
+            return false;
+
         if (_db.Users.Any(u => u.Username.Equals(username.Trim(), StringComparison.OrdinalIgnoreCase)))
             return false;
 
@@ -28,6 +31,16 @@ public class AuthService
             Password = password
         };
         _db.Users.Add(customer);
+        return true;
+    }
+
+    private static bool MeetsPasswordStrength(string password)
+    {
+        if (password.Length < 8) return false;
+        if (!password.Any(char.IsUpper)) return false;
+        if (!password.Any(char.IsLower)) return false;
+        if (!password.Any(char.IsDigit)) return false;
+        if (!password.Any(c => !char.IsLetterOrDigit(c))) return false;
         return true;
     }
 }
