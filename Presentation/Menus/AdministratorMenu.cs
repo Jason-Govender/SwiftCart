@@ -12,13 +12,15 @@ public class AdministratorMenu
     private readonly ProductService _productService;
     private readonly OrderService _orderService;
     private readonly ReviewService _reviewService;
+    private readonly ReportService _reportService;
 
-    public AdministratorMenu(AuthService authService, ProductService productService, OrderService orderService, ReviewService reviewService)
+    public AdministratorMenu(AuthService authService, ProductService productService, OrderService orderService, ReviewService reviewService, ReportService reportService)
     {
         _authService = authService;
         _productService = productService;
         _orderService = orderService;
         _reviewService = reviewService;
+        _reportService = reportService;
     }
 
     public void Run(Administrator user)
@@ -72,6 +74,9 @@ public class AdministratorMenu
                     break;
                 case 8:
                     HandleViewLowStock();
+                    break;
+                case 9:
+                    HandleGenerateReports();
                     break;
                 default:
                     Console.WriteLine("Not implemented yet.");
@@ -225,5 +230,89 @@ public class AdministratorMenu
             Console.WriteLine($"Order #{orderId} status updated to {status}.");
         else
             Console.WriteLine("Order not found.");
+    }
+
+    private void HandleGenerateReports()
+    {
+        while (true)
+        {
+            Console.WriteLine("\n--- Sales Reports ---");
+            Console.WriteLine("1. Sales Summary");
+            Console.WriteLine("2. Top Products");
+            Console.WriteLine("3. Revenue by Period");
+            Console.WriteLine("4. Back");
+
+            int choice = InputHelper.ReadInt("Select report: ", 1, 4);
+            if (choice == 4)
+                return;
+
+            switch (choice)
+            {
+                case 1:
+                    ShowSalesSummary();
+                    break;
+                case 2:
+                    ShowTopProducts();
+                    break;
+                case 3:
+                    ShowRevenueByPeriod();
+                    break;
+            }
+
+            InputHelper.WaitForAnyKey("Press any key to continue.");
+        }
+    }
+
+    private void ShowSalesSummary()
+    {
+        DateTime? from = null;
+        DateTime? to = null;
+        string fromStr = InputHelper.ReadString("From date (yyyy-MM-dd, or leave empty for all time): ");
+        if (!string.IsNullOrWhiteSpace(fromStr) && DateTime.TryParse(fromStr, out var fromParsed))
+            from = fromParsed.Date;
+        string toStr = InputHelper.ReadString("To date (yyyy-MM-dd, or leave empty for all time): ");
+        if (!string.IsNullOrWhiteSpace(toStr) && DateTime.TryParse(toStr, out var toParsed))
+            to = toParsed.Date.AddDays(1).AddTicks(-1);
+
+        var (totalRevenue, orderCount, avgOrderValue) = _reportService.GetSalesSummary(from, to);
+        if (orderCount == 0)
+        {
+            Console.WriteLine("No orders in the selected period.");
+            return;
+        }
+        Console.WriteLine($"Total Revenue: ${totalRevenue:N2}");
+        Console.WriteLine($"Order Count: {orderCount}");
+        Console.WriteLine($"Average Order Value: ${avgOrderValue:N2}");
+    }
+
+    private void ShowTopProducts()
+    {
+        int limit = InputHelper.ReadInt("Number of top products (1-50): ", 1, 50);
+        var top = _reportService.GetTopProducts(limit);
+        if (top.Count == 0)
+        {
+            Console.WriteLine("No sales data.");
+            return;
+        }
+        Console.WriteLine($"Top {top.Count} products by quantity sold:");
+        foreach (var (productId, productName, quantitySold, revenue) in top)
+            Console.WriteLine($"  {productName} (ID {productId}): {quantitySold} sold - ${revenue:N2}");
+    }
+
+    private void ShowRevenueByPeriod()
+    {
+        Console.WriteLine("1. By Day  2. By Week  3. By Month");
+        int periodChoice = InputHelper.ReadInt("Select period: ", 1, 3);
+        string period = periodChoice switch { 1 => "day", 2 => "week", 3 => "month", _ => "day" };
+
+        var rows = _reportService.GetRevenueByPeriod(period);
+        if (rows.Count == 0)
+        {
+            Console.WriteLine("No orders in the selected period.");
+            return;
+        }
+        Console.WriteLine($"Revenue by {period}:");
+        foreach (var (periodLabel, revenue, orderCount) in rows)
+            Console.WriteLine($"  {periodLabel}: ${revenue:N2} ({orderCount} order(s))");
     }
 }
