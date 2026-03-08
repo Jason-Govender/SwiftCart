@@ -11,8 +11,9 @@ CartService cartService = new CartService(db);
 WalletService walletService = new WalletService(db);
 OrderService orderService = new OrderService(db, cartService, walletService, productService);
 ReviewService reviewService = new ReviewService(db, productService);
+ReportService reportService = new ReportService(db);
 CustomerMenu customerMenu = new CustomerMenu(authService, productService, cartService, walletService, orderService, reviewService);
-AdministratorMenu administratorMenu = new AdministratorMenu(authService, productService, orderService, reviewService);
+AdministratorMenu administratorMenu = new AdministratorMenu(authService, productService, orderService, reviewService, reportService);
 MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu);
 
 jsonDataStore.LoadUsers(db);
