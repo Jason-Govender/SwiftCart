@@ -25,7 +25,6 @@ Always read and use `spec.md` as the source of truth before making implementatio
 
 ## Output Constraints
 
-- Never assign a variable with var.
 - Do not generate a whole feature at once.
 - Do not generate large multi-file rewrites unless explicitly requested.
 - Do not change unrelated files.
