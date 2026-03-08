@@ -6,11 +6,14 @@ namespace SwiftCart.Presentation.Menus;
 
 public class AdministratorMenu
 {
+    private const int LowStockThresholdDefault = 5;
     private readonly AuthService _authService;
+    private readonly ProductService _productService;
 
-    public AdministratorMenu(AuthService authService)
+    public AdministratorMenu(AuthService authService, ProductService productService)
     {
         _authService = authService;
+        _productService = productService;
     }
 
     public void Run(Administrator user)
@@ -35,10 +38,137 @@ public class AdministratorMenu
             {
                 _authService.Logout();
                 Console.WriteLine("You have been logged out.");
+                InputHelper.WaitForAnyKey("Press any key to continue.");
                 return;
             }
 
-            Console.WriteLine("Not implemented yet.");
+            switch (choice)
+            {
+                case 1:
+                    HandleAddProduct();
+                    break;
+                case 2:
+                    HandleUpdateProduct();
+                    break;
+                case 3:
+                    HandleDeleteProduct();
+                    break;
+                case 4:
+                    HandleRestockProduct();
+                    break;
+                case 5:
+                    HandleViewProducts();
+                    break;
+                case 8:
+                    HandleViewLowStock();
+                    break;
+                default:
+                    Console.WriteLine("Not implemented yet.");
+                    break;
+            }
+
+            InputHelper.WaitForAnyKey("Press any key to return to menu.");
         }
+    }
+
+    private void HandleAddProduct()
+    {
+        string name = InputHelper.ReadString("Product name: ");
+        string description = InputHelper.ReadString("Description: ");
+        decimal price = InputHelper.ReadDecimal("Price: ", 0, 999999.99m);
+        int stock = InputHelper.ReadInt("Initial stock: ", 0, 100000);
+
+        if (_productService.Add(name, description, price, stock))
+            Console.WriteLine("Product added successfully.");
+        else
+            Console.WriteLine("Failed to add product. Name cannot be empty.");
+    }
+
+    private void HandleUpdateProduct()
+    {
+        var products = _productService.GetAll();
+        if (products.Count == 0)
+        {
+            Console.WriteLine("No products to update.");
+            return;
+        }
+        foreach (var p in products)
+            Console.WriteLine($"  [{p.Id}] {p.Name}");
+        int id = InputHelper.ReadInt("Product ID to update: ", products.Min(p => p.Id), products.Max(p => p.Id));
+        string name = InputHelper.ReadString("New name: ");
+        string description = InputHelper.ReadString("New description: ");
+        decimal price = InputHelper.ReadDecimal("New price: ", 0, 999999.99m);
+
+        if (_productService.Update(id, name, description, price))
+            Console.WriteLine("Product updated successfully.");
+        else
+            Console.WriteLine("Update failed. Product not found or name is empty.");
+    }
+
+    private void HandleDeleteProduct()
+    {
+        var products = _productService.GetAll();
+        if (products.Count == 0)
+        {
+            Console.WriteLine("No products to delete.");
+            return;
+        }
+        foreach (var p in products)
+            Console.WriteLine($"  [{p.Id}] {p.Name}");
+        int id = InputHelper.ReadInt("Product ID to delete: ", products.Min(p => p.Id), products.Max(p => p.Id));
+        string confirm = InputHelper.ReadString("Delete this product? (y/n): ");
+        if (!confirm.Trim().Equals("y", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("Cancelled.");
+            return;
+        }
+        if (_productService.Delete(id))
+            Console.WriteLine("Product deleted.");
+        else
+            Console.WriteLine("Product not found.");
+    }
+
+    private void HandleRestockProduct()
+    {
+        var products = _productService.GetAll();
+        if (products.Count == 0)
+        {
+            Console.WriteLine("No products to restock.");
+            return;
+        }
+        foreach (var p in products)
+            Console.WriteLine($"  [{p.Id}] {p.Name} (Stock: {p.StockQuantity})");
+        int id = InputHelper.ReadInt("Product ID to restock: ", products.Min(p => p.Id), products.Max(p => p.Id));
+        int quantity = InputHelper.ReadInt("Quantity to add: ", 1, 100000);
+
+        if (_productService.Restock(id, quantity))
+            Console.WriteLine("Product restocked successfully.");
+        else
+            Console.WriteLine("Restock failed. Product not found.");
+    }
+
+    private void HandleViewProducts()
+    {
+        var products = _productService.GetAll();
+        if (products.Count == 0)
+        {
+            Console.WriteLine("No products.");
+            return;
+        }
+        foreach (var p in products)
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
+    }
+
+    private void HandleViewLowStock()
+    {
+        int threshold = InputHelper.ReadInt($"Low stock threshold (default {LowStockThresholdDefault}): ", 0, 10000);
+        var products = _productService.GetLowStock(threshold);
+        if (products.Count == 0)
+        {
+            Console.WriteLine("No products at or below that threshold.");
+            return;
+        }
+        foreach (var p in products)
+            Console.WriteLine($"  [{p.Id}] {p.Name} - Stock: {p.StockQuantity}");
     }
 }

@@ -18,4 +18,21 @@ public static class InputHelper
             Console.WriteLine($"Please enter a number between {min} and {max}.");
         }
     }
+
+    public static decimal ReadDecimal(string prompt, decimal min, decimal max)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            if (decimal.TryParse(Console.ReadLine(), out decimal value) && value >= min && value <= max)
+                return value;
+            Console.WriteLine($"Please enter a number between {min} and {max}.");
+        }
+    }
+
+    public static void WaitForAnyKey(string message)
+    {
+        Console.WriteLine(message);
+        Console.ReadKey(intercept: true);
+    }
 }

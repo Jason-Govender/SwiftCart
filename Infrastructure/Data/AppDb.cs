@@ -5,4 +5,5 @@ namespace SwiftCart.Infrastructure.Data;
 public class AppDb
 {
     public List<User> Users { get; } = new();
+    public List<Product> Products { get; } = new();
 }
