@@ -97,4 +97,17 @@ public class ProductService
         product.StockQuantity += quantity;
         return true;
     }
+
+    public bool DeductStock(int productId, int quantity)
+    {
+        if (quantity <= 0)
+            return false;
+
+        Product? product = GetById(productId);
+        if (product == null || product.StockQuantity < quantity)
+            return false;
+
+        product.StockQuantity -= quantity;
+        return true;
+    }
 }
