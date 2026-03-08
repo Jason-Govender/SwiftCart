@@ -8,6 +8,8 @@ public class AuthService
 {
     private readonly AppDb _db;
 
+    public User? CurrentUser { get; private set; }
+
     public AuthService(AppDb db)
     {
         _db = db;
@@ -38,10 +40,20 @@ public class AuthService
     public User? Login(string username, string password)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            CurrentUser = null;
             return null;
+        }
 
-        return _db.Users.FirstOrDefault(u =>
+        User? user = _db.Users.FirstOrDefault(u =>
             u.Username.Equals(username.Trim(), StringComparison.OrdinalIgnoreCase) && u.Password == password);
+        CurrentUser = user;
+        return user;
+    }
+
+    public void Logout()
+    {
+        CurrentUser = null;
     }
 
     private static bool MeetsPasswordStrength(string password)
