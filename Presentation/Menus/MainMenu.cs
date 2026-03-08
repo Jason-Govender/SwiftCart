@@ -1,16 +1,21 @@
 using SwiftCart.Application.Enums;
 using SwiftCart.Application.Helpers;
 using SwiftCart.Application.Services;
+using SwiftCart.Domain.Entities;
 
 namespace SwiftCart.Presentation.Menus;
 
 public class MainMenu
 {
     private readonly AuthService _authService;
+    private readonly CustomerMenu _customerMenu;
+    private readonly AdministratorMenu _administratorMenu;
 
-    public MainMenu(AuthService authService)
+    public MainMenu(AuthService authService, CustomerMenu customerMenu, AdministratorMenu administratorMenu)
     {
         _authService = authService;
+        _customerMenu = customerMenu;
+        _administratorMenu = administratorMenu;
     }
 
     public void Run()
@@ -30,7 +35,7 @@ public class MainMenu
                     HandleRegister();
                     break;
                 case 2:
-                    Console.WriteLine("Login not implemented yet.");
+                    HandleLogin();
                     break;
                 case 3:
                     Console.WriteLine("Goodbye!");
@@ -61,5 +66,24 @@ public class MainMenu
                 Console.WriteLine("Registration failed. That username is already taken.");
                 break;
         }
+    }
+
+    private void HandleLogin()
+    {
+        string username = InputHelper.ReadString("Username: ");
+        string password = InputHelper.ReadString("Password: ");
+
+        User? user = _authService.Login(username, password);
+
+        if (user == null)
+        {
+            Console.WriteLine("Login failed. Invalid username or password.");
+            return;
+        }
+
+        if (user is Customer customer)
+            _customerMenu.Run(customer);
+        else if (user is Administrator admin)
+            _administratorMenu.Run(admin);
     }
 }
