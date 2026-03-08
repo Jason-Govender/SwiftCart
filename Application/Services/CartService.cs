@@ -16,17 +16,49 @@ public class CartService
     {
         var cart = _db.Carts.FirstOrDefault(c => c.CustomerId == customerId);
         if (cart != null)
+        {
+            EnsureCartItemsInitialized(cart);
             return cart;
+        }
 
-        int nextId = _db.Carts.Count > 0 ? _db.Carts.Max(c => c.Id) + 1 : 1;
         cart = new Cart
         {
-            Id = nextId,
+            Id = GetNextCartId(),
             CustomerId = customerId,
             Items = new List<CartItem>()
         };
         _db.Carts.Add(cart);
         return cart;
+    }
+
+    private static int GetNextCartId(AppDb db)
+    {
+        if (db.Carts == null || db.Carts.Count == 0)
+            return 1;
+        return db.Carts.Max(c => c.Id) + 1;
+    }
+
+    private int GetNextCartId() => GetNextCartId(_db);
+
+    private static int GetNextCartItemId(AppDb db)
+    {
+        if (db.Carts == null)
+            return 1;
+        int max = db.Carts
+            .Where(c => c.Items != null)
+            .SelectMany(c => c.Items)
+            .Select(i => i.Id)
+            .DefaultIfEmpty(0)
+            .Max();
+        return max + 1;
+    }
+
+    private int GetNextCartItemId() => GetNextCartItemId(_db);
+
+    private static void EnsureCartItemsInitialized(Cart cart)
+    {
+        if (cart.Items == null)
+            cart.Items = new List<CartItem>();
     }
 
     public Cart GetCart(int customerId)
@@ -57,10 +89,10 @@ public class CartService
         }
         else
         {
-            int nextItemId = _db.Carts.SelectMany(c => c.Items).Select(i => i.Id).DefaultIfEmpty(0).Max() + 1;
+            EnsureCartItemsInitialized(cart);
             cart.Items.Add(new CartItem
             {
-                Id = nextItemId,
+                Id = GetNextCartItemId(),
                 CartId = cart.Id,
                 ProductId = productId,
                 Quantity = quantity,
@@ -88,7 +120,9 @@ public class CartService
         }
 
         var product = _db.Products.FirstOrDefault(p => p.Id == item.ProductId);
-        if (product != null && newQuantity > product.StockQuantity)
+        if (product == null)
+            newQuantity = Math.Min(newQuantity, item.Quantity);
+        else if (newQuantity > product.StockQuantity)
             newQuantity = product.StockQuantity;
 
         item.Quantity = newQuantity;
