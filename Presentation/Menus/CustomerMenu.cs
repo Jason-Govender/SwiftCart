@@ -7,10 +7,12 @@ namespace SwiftCart.Presentation.Menus;
 public class CustomerMenu
 {
     private readonly AuthService _authService;
+    private readonly ProductService _productService;
 
-    public CustomerMenu(AuthService authService)
+    public CustomerMenu(AuthService authService, ProductService productService)
     {
         _authService = authService;
+        _productService = productService;
     }
 
     public void Run(Customer user)
@@ -40,7 +42,43 @@ public class CustomerMenu
                 return;
             }
 
-            Console.WriteLine("Not implemented yet.");
+            switch (choice)
+            {
+                case 1:
+                    HandleBrowseProducts();
+                    break;
+                case 2:
+                    HandleSearchProducts();
+                    break;
+                default:
+                    Console.WriteLine("Not implemented yet.");
+                    break;
+            }
         }
+    }
+
+    private void HandleBrowseProducts()
+    {
+        var products = _productService.GetAll();
+        if (products.Count == 0)
+        {
+            Console.WriteLine("No products available.");
+            return;
+        }
+        foreach (var p in products)
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
+    }
+
+    private void HandleSearchProducts()
+    {
+        string term = InputHelper.ReadString("Search term: ");
+        var products = _productService.Search(term);
+        if (products.Count == 0)
+        {
+            Console.WriteLine("No matching products.");
+            return;
+        }
+        foreach (var p in products)
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
     }
 }
