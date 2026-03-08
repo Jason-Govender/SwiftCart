@@ -29,4 +29,10 @@ public static class InputHelper
             Console.WriteLine($"Please enter a number between {min} and {max}.");
         }
     }
+
+    public static void WaitForAnyKey(string message)
+    {
+        Console.WriteLine(message);
+        Console.ReadKey(intercept: true);
+    }
 }

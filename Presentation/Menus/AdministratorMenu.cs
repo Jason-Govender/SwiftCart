@@ -38,6 +38,7 @@ public class AdministratorMenu
             {
                 _authService.Logout();
                 Console.WriteLine("You have been logged out.");
+                InputHelper.WaitForAnyKey("Press any key to continue.");
                 return;
             }
 
@@ -65,6 +66,8 @@ public class AdministratorMenu
                     Console.WriteLine("Not implemented yet.");
                     break;
             }
+
+            InputHelper.WaitForAnyKey("Press any key to return to menu.");
         }
     }
 
