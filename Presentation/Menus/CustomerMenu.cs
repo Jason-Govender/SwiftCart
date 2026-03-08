@@ -10,13 +10,15 @@ public class CustomerMenu
     private readonly ProductService _productService;
     private readonly CartService _cartService;
     private readonly WalletService _walletService;
+    private readonly OrderService _orderService;
 
-    public CustomerMenu(AuthService authService, ProductService productService, CartService cartService, WalletService walletService)
+    public CustomerMenu(AuthService authService, ProductService productService, CartService cartService, WalletService walletService, OrderService orderService)
     {
         _authService = authService;
         _productService = productService;
         _cartService = cartService;
         _walletService = walletService;
+        _orderService = orderService;
     }
 
     public void Run(Customer user)
@@ -65,13 +67,19 @@ public class CustomerMenu
                     HandleUpdateCart(user);
                     break;
                 case 6:
-                    Console.WriteLine("Not implemented yet.");
+                    HandleCheckout(user);
                     break;
                 case 7:
                     HandleViewWalletBalance(user);
                     break;
                 case 8:
                     HandleAddWalletFunds(user);
+                    break;
+                case 9:
+                    HandleViewOrderHistory(user);
+                    break;
+                case 10:
+                    HandleTrackOrders(user);
                     break;
                 default:
                     Console.WriteLine("Not implemented yet.");
@@ -176,5 +184,57 @@ public class CustomerMenu
             Console.WriteLine($"${amount:N2} added to your wallet.");
         else
             Console.WriteLine("Failed to add funds.");
+    }
+
+    private void HandleCheckout(Customer user)
+    {
+        var (success, order, errorMessage) = _orderService.PlaceOrder(user.Id);
+        if (success && order != null)
+            Console.WriteLine($"Order placed successfully. Order #{order.Id} - Total: ${order.TotalAmount:N2}");
+        else
+            Console.WriteLine($"Checkout failed: {errorMessage ?? "Unknown error."}");
+    }
+
+    private void HandleViewOrderHistory(Customer user)
+    {
+        var orders = _orderService.GetOrdersByCustomer(user.Id);
+        if (orders.Count == 0)
+        {
+            Console.WriteLine("You have no orders yet.");
+            return;
+        }
+        foreach (var o in orders)
+            Console.WriteLine($"  Order #{o.Id} - {o.CreatedAt:yyyy-MM-dd HH:mm} - ${o.TotalAmount:N2} - {o.Status}");
+    }
+
+    private void HandleTrackOrders(Customer user)
+    {
+        var orders = _orderService.GetOrdersByCustomer(user.Id);
+        if (orders.Count == 0)
+        {
+            Console.WriteLine("You have no orders to track.");
+            return;
+        }
+        foreach (var o in orders)
+            Console.WriteLine($"  Order #{o.Id} - Status: {o.Status} - ${o.TotalAmount:N2} - {o.CreatedAt:yyyy-MM-dd HH:mm}");
+        int orderId = InputHelper.ReadInt("Enter order ID for details (or 0 to skip): ", 0, int.MaxValue);
+        if (orderId == 0)
+            return;
+        var order = _orderService.GetOrderById(orderId);
+        if (order == null || order.CustomerId != user.Id)
+        {
+            Console.WriteLine("Order not found.");
+            return;
+        }
+        Console.WriteLine($"Order #{order.Id} - Status: {order.Status} - Total: ${order.TotalAmount:N2} - Placed: {order.CreatedAt:yyyy-MM-dd HH:mm}");
+        if (order.Items != null && order.Items.Count > 0)
+        {
+            foreach (var item in order.Items)
+            {
+                var product = _productService.GetById(item.ProductId);
+                string name = product?.Name ?? $"Product #{item.ProductId}";
+                Console.WriteLine($"    {name} x {item.Quantity} @ ${item.UnitPrice:N2}");
+            }
+        }
     }
 }
