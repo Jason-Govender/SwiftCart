@@ -44,6 +44,19 @@ public class WalletService
         return true;
     }
 
+    public bool DeductFunds(int customerId, decimal amount)
+    {
+        if (amount <= 0)
+            return false;
+
+        var wallet = _db.Wallets.FirstOrDefault(w => w.CustomerId == customerId);
+        if (wallet == null || wallet.Balance < amount)
+            return false;
+
+        wallet.Balance -= amount;
+        return true;
+    }
+
     private static int GetNextWalletId(AppDb db)
     {
         if (db.Wallets == null || db.Wallets.Count == 0)
