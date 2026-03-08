@@ -104,7 +104,12 @@ public class CustomerMenu
             return;
         }
         foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
+        {
+            var avg = _reviewService.GetAverageRating(p.Id);
+            var count = _reviewService.GetReviewCount(p.Id);
+            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+        }
     }
 
     private void HandleSearchProducts()
@@ -117,7 +122,12 @@ public class CustomerMenu
             return;
         }
         foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
+        {
+            var avg = _reviewService.GetAverageRating(p.Id);
+            var count = _reviewService.GetReviewCount(p.Id);
+            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+        }
     }
 
     private void HandleAddToCart(Customer user)

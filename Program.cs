@@ -12,7 +12,7 @@ WalletService walletService = new WalletService(db);
 OrderService orderService = new OrderService(db, cartService, walletService, productService);
 ReviewService reviewService = new ReviewService(db, productService);
 CustomerMenu customerMenu = new CustomerMenu(authService, productService, cartService, walletService, orderService, reviewService);
-AdministratorMenu administratorMenu = new AdministratorMenu(authService, productService, orderService);
+AdministratorMenu administratorMenu = new AdministratorMenu(authService, productService, orderService, reviewService);
 MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu);
 
 jsonDataStore.LoadUsers(db);
