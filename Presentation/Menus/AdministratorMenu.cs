@@ -1,6 +1,7 @@
 using SwiftCart.Application.Helpers;
 using SwiftCart.Application.Services;
 using SwiftCart.Domain.Entities;
+using SwiftCart.Domain.Enums;
 
 namespace SwiftCart.Presentation.Menus;
 
@@ -9,11 +10,13 @@ public class AdministratorMenu
     private const int LowStockThresholdDefault = 5;
     private readonly AuthService _authService;
     private readonly ProductService _productService;
+    private readonly OrderService _orderService;
 
-    public AdministratorMenu(AuthService authService, ProductService productService)
+    public AdministratorMenu(AuthService authService, ProductService productService, OrderService orderService)
     {
         _authService = authService;
         _productService = productService;
+        _orderService = orderService;
     }
 
     public void Run(Administrator user)
@@ -21,15 +24,15 @@ public class AdministratorMenu
         while (true)
         {
             Console.WriteLine($"\n--- Administrator Menu (logged in as {user.Username}) ---");
-            Console.WriteLine("1. Add Product");
-            Console.WriteLine("2. Update Product");
-            Console.WriteLine("3. Delete Product");
-            Console.WriteLine("4. Restock Product");
-            Console.WriteLine("5. View Products");
-            Console.WriteLine("6. View Orders");
-            Console.WriteLine("7. Update Order Status");
-            Console.WriteLine("8. View Low Stock Products");
-            Console.WriteLine("9. Generate Sales Reports");
+            Console.WriteLine("1.  Add Product");
+            Console.WriteLine("2.  Update Product");
+            Console.WriteLine("3.  Delete Product");
+            Console.WriteLine("4.  Restock Product");
+            Console.WriteLine("5.  View Products");
+            Console.WriteLine("6.  View Orders");
+            Console.WriteLine("7.  Update Order Status");
+            Console.WriteLine("8.  View Low Stock Products");
+            Console.WriteLine("9.  Generate Sales Reports");
             Console.WriteLine("10. Logout");
 
             int choice = InputHelper.ReadInt("Select option: ", 1, 10);
@@ -58,6 +61,12 @@ public class AdministratorMenu
                     break;
                 case 5:
                     HandleViewProducts();
+                    break;
+                case 6:
+                    HandleViewOrders();
+                    break;
+                case 7:
+                    HandleUpdateOrderStatus();
                     break;
                 case 8:
                     HandleViewLowStock();
@@ -116,8 +125,7 @@ public class AdministratorMenu
         foreach (var p in products)
             Console.WriteLine($"  [{p.Id}] {p.Name}");
         int id = InputHelper.ReadInt("Product ID to delete: ", products.Min(p => p.Id), products.Max(p => p.Id));
-        string confirm = InputHelper.ReadString("Delete this product? (y/n): ");
-        if (!confirm.Trim().Equals("y", StringComparison.OrdinalIgnoreCase))
+        if (!InputHelper.ReadYesNo("Delete this product? (y/n): "))
         {
             Console.WriteLine("Cancelled.");
             return;
@@ -170,5 +178,45 @@ public class AdministratorMenu
         }
         foreach (var p in products)
             Console.WriteLine($"  [{p.Id}] {p.Name} - Stock: {p.StockQuantity}");
+    }
+
+    private void HandleViewOrders()
+    {
+        var orders = _orderService.GetAllOrders();
+        if (orders.Count == 0)
+        {
+            Console.WriteLine("No orders.");
+            return;
+        }
+        foreach (var o in orders)
+            Console.WriteLine($"  Order #{o.Id} - Customer #{o.CustomerId} - ${o.TotalAmount:N2} - {o.Status} - {o.CreatedAt:yyyy-MM-dd HH:mm}");
+    }
+
+    private void HandleUpdateOrderStatus()
+    {
+        var orders = _orderService.GetAllOrders();
+        if (orders.Count == 0)
+        {
+            Console.WriteLine("No orders to update.");
+            return;
+        }
+        foreach (var o in orders)
+            Console.WriteLine($"  [{o.Id}] Customer #{o.CustomerId} - {o.Status} - ${o.TotalAmount:N2}");
+        int orderId = InputHelper.ReadInt("Order ID to update: ", orders.Min(o => o.Id), orders.Max(o => o.Id));
+        Console.WriteLine("1. Pending  2. Confirmed  3. Shipped  4. Delivered  5. Cancelled");
+        int statusChoice = InputHelper.ReadInt("New status (1-5): ", 1, 5);
+        var status = statusChoice switch
+        {
+            1 => OrderStatus.Pending,
+            2 => OrderStatus.Confirmed,
+            3 => OrderStatus.Shipped,
+            4 => OrderStatus.Delivered,
+            5 => OrderStatus.Cancelled,
+            _ => OrderStatus.Pending
+        };
+        if (_orderService.UpdateOrderStatus(orderId, status))
+            Console.WriteLine($"Order #{orderId} status updated to {status}.");
+        else
+            Console.WriteLine("Order not found.");
     }
 }

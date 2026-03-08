@@ -5,7 +5,7 @@ public static class InputHelper
     public static string ReadString(string prompt)
     {
         Console.Write(prompt);
-        return Console.ReadLine() ?? string.Empty;
+        return (Console.ReadLine() ?? string.Empty).Trim();
     }
 
     public static int ReadInt(string prompt, int min, int max)
@@ -13,9 +13,18 @@ public static class InputHelper
         while (true)
         {
             Console.Write(prompt);
-            if (int.TryParse(Console.ReadLine(), out int value) && value >= min && value <= max)
-                return value;
-            Console.WriteLine($"Please enter a number between {min} and {max}.");
+            string input = Console.ReadLine() ?? string.Empty;
+            if (!int.TryParse(input.Trim(), out int value))
+            {
+                Console.WriteLine("Please enter a valid whole number.");
+                continue;
+            }
+            if (value < min || value > max)
+            {
+                Console.WriteLine($"Please enter a number between {min} and {max}.");
+                continue;
+            }
+            return value;
         }
     }
 
@@ -24,9 +33,36 @@ public static class InputHelper
         while (true)
         {
             Console.Write(prompt);
-            if (decimal.TryParse(Console.ReadLine(), out decimal value) && value >= min && value <= max)
-                return value;
-            Console.WriteLine($"Please enter a number between {min} and {max}.");
+            string input = Console.ReadLine() ?? string.Empty;
+            if (!decimal.TryParse(input.Trim(), out decimal value))
+            {
+                Console.WriteLine("Please enter a valid number.");
+                continue;
+            }
+            if (value < min || value > max)
+            {
+                Console.WriteLine($"Please enter a number between {min} and {max}.");
+                continue;
+            }
+            return value;
+        }
+    }
+
+    /// <summary>
+    /// Prompts for y/n (or yes/no). Returns true for yes, false for no. Re-prompts until valid input.
+    /// </summary>
+    public static bool ReadYesNo(string prompt)
+    {
+        while (true)
+        {
+            string input = ReadString(prompt).Trim();
+            if (input.Equals("y", StringComparison.OrdinalIgnoreCase) ||
+                input.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (input.Equals("n", StringComparison.OrdinalIgnoreCase) ||
+                input.Equals("no", StringComparison.OrdinalIgnoreCase))
+                return false;
+            Console.WriteLine("Please enter y or n.");
         }
     }
 
