@@ -11,6 +11,7 @@ AdministratorMenu administratorMenu = new AdministratorMenu(authService);
 MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu);
 
 jsonDataStore.LoadUsers(db);
+jsonDataStore.LoadProducts(db);
 SeedData.SeedUsersIfEmpty(db);
 
 try
@@ -20,4 +21,5 @@ try
 finally
 {
     jsonDataStore.SaveUsers(db);
+    jsonDataStore.SaveProducts(db);
 }
