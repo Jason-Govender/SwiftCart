@@ -21,15 +21,15 @@ public class AdministratorMenu
         while (true)
         {
             Console.WriteLine($"\n--- Administrator Menu (logged in as {user.Username}) ---");
-            Console.WriteLine("1. Add Product");
-            Console.WriteLine("2. Update Product");
-            Console.WriteLine("3. Delete Product");
-            Console.WriteLine("4. Restock Product");
-            Console.WriteLine("5. View Products");
-            Console.WriteLine("6. View Orders");
-            Console.WriteLine("7. Update Order Status");
-            Console.WriteLine("8. View Low Stock Products");
-            Console.WriteLine("9. Generate Sales Reports");
+            Console.WriteLine("1.  Add Product");
+            Console.WriteLine("2.  Update Product");
+            Console.WriteLine("3.  Delete Product");
+            Console.WriteLine("4.  Restock Product");
+            Console.WriteLine("5.  View Products");
+            Console.WriteLine("6.  View Orders");
+            Console.WriteLine("7.  Update Order Status");
+            Console.WriteLine("8.  View Low Stock Products");
+            Console.WriteLine("9.  Generate Sales Reports");
             Console.WriteLine("10. Logout");
 
             int choice = InputHelper.ReadInt("Select option: ", 1, 10);
@@ -116,8 +116,7 @@ public class AdministratorMenu
         foreach (var p in products)
             Console.WriteLine($"  [{p.Id}] {p.Name}");
         int id = InputHelper.ReadInt("Product ID to delete: ", products.Min(p => p.Id), products.Max(p => p.Id));
-        string confirm = InputHelper.ReadString("Delete this product? (y/n): ");
-        if (!confirm.Trim().Equals("y", StringComparison.OrdinalIgnoreCase))
+        if (!InputHelper.ReadYesNo("Delete this product? (y/n): "))
         {
             Console.WriteLine("Cancelled.");
             return;

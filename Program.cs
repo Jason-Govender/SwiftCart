@@ -8,7 +8,8 @@ JsonDataStore jsonDataStore = new JsonDataStore();
 AuthService authService = new AuthService(db);
 ProductService productService = new ProductService(db);
 CartService cartService = new CartService(db);
-CustomerMenu customerMenu = new CustomerMenu(authService, productService, cartService);
+WalletService walletService = new WalletService(db);
+CustomerMenu customerMenu = new CustomerMenu(authService, productService, cartService, walletService);
 AdministratorMenu administratorMenu = new AdministratorMenu(authService, productService);
 MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu);
 
