@@ -15,6 +15,7 @@ MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu);
 jsonDataStore.LoadUsers(db);
 jsonDataStore.LoadProducts(db);
 jsonDataStore.LoadCarts(db);
+jsonDataStore.LoadWallets(db);
 SeedData.SeedUsersIfEmpty(db);
 SeedData.SeedProductsIfEmpty(db);
 
@@ -27,4 +28,5 @@ finally
     jsonDataStore.SaveUsers(db);
     jsonDataStore.SaveProducts(db);
     jsonDataStore.SaveCarts(db);
+    jsonDataStore.SaveWallets(db);
 }
