@@ -1,3 +1,4 @@
+using SwiftCart.Application.Enums;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Infrastructure.Data;
 
@@ -12,16 +13,16 @@ public class AuthService
         _db = db;
     }
 
-    public bool Register(string username, string password)
+    public RegistrationResult Register(string username, string password)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            return false;
+            return RegistrationResult.EmptyCredentials;
 
         if (!MeetsPasswordStrength(password))
-            return false;
+            return RegistrationResult.WeakPassword;
 
         if (_db.Users.Any(u => u.Username.Equals(username.Trim(), StringComparison.OrdinalIgnoreCase)))
-            return false;
+            return RegistrationResult.DuplicateUsername;
 
         int nextId = _db.Users.Count > 0 ? _db.Users.Max(u => u.Id) + 1 : 1;
         Customer customer = new Customer
@@ -31,7 +32,7 @@ public class AuthService
             Password = password
         };
         _db.Users.Add(customer);
-        return true;
+        return RegistrationResult.Success;
     }
 
     private static bool MeetsPasswordStrength(string password)

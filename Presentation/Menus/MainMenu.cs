@@ -1,3 +1,4 @@
+using SwiftCart.Application.Enums;
 using SwiftCart.Application.Helpers;
 using SwiftCart.Application.Services;
 
@@ -43,9 +44,22 @@ public class MainMenu
         string username = InputHelper.ReadString("Username: ");
         string password = InputHelper.ReadString("Password: ");
 
-        if (_authService.Register(username, password))
-            Console.WriteLine("Registration successful.");
-        else
-            Console.WriteLine("Registration failed. Username may already exist, password is invalid, or fields are invalid.");
+        RegistrationResult result = _authService.Register(username, password);
+
+        switch (result)
+        {
+            case RegistrationResult.Success:
+                Console.WriteLine("Registration successful.");
+                break;
+            case RegistrationResult.EmptyCredentials:
+                Console.WriteLine("Registration failed. Username and password are required.");
+                break;
+            case RegistrationResult.WeakPassword:
+                Console.WriteLine("Registration failed. Password must be at least 8 characters with uppercase, lowercase, number, and symbol.");
+                break;
+            case RegistrationResult.DuplicateUsername:
+                Console.WriteLine("Registration failed. That username is already taken.");
+                break;
+        }
     }
 }
