@@ -9,12 +9,14 @@ public class CustomerMenu
     private readonly AuthService _authService;
     private readonly ProductService _productService;
     private readonly CartService _cartService;
+    private readonly WalletService _walletService;
 
-    public CustomerMenu(AuthService authService, ProductService productService, CartService cartService)
+    public CustomerMenu(AuthService authService, ProductService productService, CartService cartService, WalletService walletService)
     {
         _authService = authService;
         _productService = productService;
         _cartService = cartService;
+        _walletService = walletService;
     }
 
     public void Run(Customer user)
@@ -22,15 +24,15 @@ public class CustomerMenu
         while (true)
         {
             Console.WriteLine($"\n--- Customer Menu (logged in as {user.Username}) ---");
-            Console.WriteLine("1. Browse Products");
-            Console.WriteLine("2. Search Products");
-            Console.WriteLine("3. Add Product to Cart");
-            Console.WriteLine("4. View Cart");
-            Console.WriteLine("5. Update Cart");
-            Console.WriteLine("6. Checkout");
-            Console.WriteLine("7. View Wallet Balance");
-            Console.WriteLine("8. Add Wallet Funds");
-            Console.WriteLine("9. View Order History");
+            Console.WriteLine("1.  Browse Products");
+            Console.WriteLine("2.  Search Products");
+            Console.WriteLine("3.  Add Product to Cart");
+            Console.WriteLine("4.  View Cart");
+            Console.WriteLine("5.  Update Cart");
+            Console.WriteLine("6.  Checkout");
+            Console.WriteLine("7.  View Wallet Balance");
+            Console.WriteLine("8.  Add Wallet Funds");
+            Console.WriteLine("9.  View Order History");
             Console.WriteLine("10. Track Orders");
             Console.WriteLine("11. Review Products");
             Console.WriteLine("12. Logout");
@@ -61,6 +63,15 @@ public class CustomerMenu
                     break;
                 case 5:
                     HandleUpdateCart(user);
+                    break;
+                case 6:
+                    Console.WriteLine("Not implemented yet.");
+                    break;
+                case 7:
+                    HandleViewWalletBalance(user);
+                    break;
+                case 8:
+                    HandleAddWalletFunds(user);
                     break;
                 default:
                     Console.WriteLine("Not implemented yet.");
@@ -150,5 +161,20 @@ public class CustomerMenu
             Console.WriteLine(newQuantity == 0 ? "Item removed from cart." : "Cart updated.");
         else
             Console.WriteLine("Item not found in your cart.");
+    }
+
+    private void HandleViewWalletBalance(Customer user)
+    {
+        decimal balance = _walletService.GetBalance(user.Id);
+        Console.WriteLine($"Your wallet balance: ${balance:N2}");
+    }
+
+    private void HandleAddWalletFunds(Customer user)
+    {
+        decimal amount = InputHelper.ReadDecimal("Amount to add: $", 0.01m, 999_999.99m);
+        if (_walletService.AddFunds(user.Id, amount))
+            Console.WriteLine($"${amount:N2} added to your wallet.");
+        else
+            Console.WriteLine("Failed to add funds.");
     }
 }
