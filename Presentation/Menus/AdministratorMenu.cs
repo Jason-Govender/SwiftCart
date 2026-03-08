@@ -11,12 +11,14 @@ public class AdministratorMenu
     private readonly AuthService _authService;
     private readonly ProductService _productService;
     private readonly OrderService _orderService;
+    private readonly ReviewService _reviewService;
 
-    public AdministratorMenu(AuthService authService, ProductService productService, OrderService orderService)
+    public AdministratorMenu(AuthService authService, ProductService productService, OrderService orderService, ReviewService reviewService)
     {
         _authService = authService;
         _productService = productService;
         _orderService = orderService;
+        _reviewService = reviewService;
     }
 
     public void Run(Administrator user)
@@ -164,7 +166,12 @@ public class AdministratorMenu
             return;
         }
         foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
+        {
+            var avg = _reviewService.GetAverageRating(p.Id);
+            var count = _reviewService.GetReviewCount(p.Id);
+            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+        }
     }
 
     private void HandleViewLowStock()

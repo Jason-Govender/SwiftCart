@@ -11,14 +11,16 @@ public class CustomerMenu
     private readonly CartService _cartService;
     private readonly WalletService _walletService;
     private readonly OrderService _orderService;
+    private readonly ReviewService _reviewService;
 
-    public CustomerMenu(AuthService authService, ProductService productService, CartService cartService, WalletService walletService, OrderService orderService)
+    public CustomerMenu(AuthService authService, ProductService productService, CartService cartService, WalletService walletService, OrderService orderService, ReviewService reviewService)
     {
         _authService = authService;
         _productService = productService;
         _cartService = cartService;
         _walletService = walletService;
         _orderService = orderService;
+        _reviewService = reviewService;
     }
 
     public void Run(Customer user)
@@ -81,6 +83,9 @@ public class CustomerMenu
                 case 10:
                     HandleTrackOrders(user);
                     break;
+                case 11:
+                    HandleReviewProducts(user);
+                    break;
                 default:
                     Console.WriteLine("Not implemented yet.");
                     break;
@@ -99,7 +104,12 @@ public class CustomerMenu
             return;
         }
         foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
+        {
+            var avg = _reviewService.GetAverageRating(p.Id);
+            var count = _reviewService.GetReviewCount(p.Id);
+            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+        }
     }
 
     private void HandleSearchProducts()
@@ -112,7 +122,12 @@ public class CustomerMenu
             return;
         }
         foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity})");
+        {
+            var avg = _reviewService.GetAverageRating(p.Id);
+            var count = _reviewService.GetReviewCount(p.Id);
+            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+        }
     }
 
     private void HandleAddToCart(Customer user)
@@ -235,6 +250,53 @@ public class CustomerMenu
                 string name = product?.Name ?? $"Product #{item.ProductId}";
                 Console.WriteLine($"    {name} x {item.Quantity} @ ${item.UnitPrice:N2}");
             }
+        }
+    }
+
+    private void HandleReviewProducts(Customer user)
+    {
+        try
+        {
+            var products = _productService.GetAll();
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No products available to review.");
+                return;
+            }
+            foreach (var p in products)
+            {
+                var avg = _reviewService.GetAverageRating(p.Id);
+                var count = _reviewService.GetReviewCount(p.Id);
+                string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+                Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} - {ratingInfo}");
+            }
+            int productId = InputHelper.ReadInt("Enter product ID to review (0 to go back): ", 0, int.MaxValue);
+            if (productId == 0)
+                return;
+            var product = _productService.GetById(productId);
+            if (product == null)
+            {
+                Console.WriteLine("Product not found.");
+                return;
+            }
+            var existing = _reviewService.GetReviewByCustomerAndProduct(user.Id, productId);
+            if (existing != null)
+            {
+                Console.WriteLine($"You already reviewed this product (rating: {existing.Rating}).");
+                if (!InputHelper.ReadYesNo("Update your review? (y/n): "))
+                    return;
+            }
+            int rating = InputHelper.ReadInt("Rating (1-5): ", 1, 5);
+            string comment = InputHelper.ReadString("Comment (optional, press Enter to skip): ");
+            var (success, errorMessage) = _reviewService.SubmitOrUpdateReview(user.Id, productId, rating, comment);
+            if (success)
+                Console.WriteLine("Review saved successfully.");
+            else
+                Console.WriteLine($"Failed to save review: {errorMessage ?? "Unknown error."}");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 }
