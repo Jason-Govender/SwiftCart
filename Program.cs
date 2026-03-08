@@ -6,7 +6,9 @@ using SwiftCart.Presentation.Menus;
 AppDb db = new AppDb();
 JsonDataStore jsonDataStore = new JsonDataStore();
 AuthService authService = new AuthService(db);
-MainMenu mainMenu = new MainMenu(authService);
+CustomerMenu customerMenu = new CustomerMenu();
+AdministratorMenu administratorMenu = new AdministratorMenu();
+MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu);
 
 jsonDataStore.LoadUsers(db);
 SeedData.SeedUsersIfEmpty(db);

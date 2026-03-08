@@ -35,6 +35,15 @@ public class AuthService
         return RegistrationResult.Success;
     }
 
+    public User? Login(string username, string password)
+    {
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            return null;
+
+        return _db.Users.FirstOrDefault(u =>
+            u.Username.Equals(username.Trim(), StringComparison.OrdinalIgnoreCase) && u.Password == password);
+    }
+
     private static bool MeetsPasswordStrength(string password)
     {
         if (password.Length < 8) return false;
