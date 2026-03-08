@@ -13,6 +13,7 @@ MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu);
 jsonDataStore.LoadUsers(db);
 jsonDataStore.LoadProducts(db);
 SeedData.SeedUsersIfEmpty(db);
+SeedData.SeedProductsIfEmpty(db);
 
 try
 {
