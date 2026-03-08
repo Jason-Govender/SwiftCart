@@ -9,4 +9,5 @@ public class AppDb
     public List<Cart> Carts { get; } = new();
     public List<Wallet> Wallets { get; } = new();
     public List<Order> Orders { get; } = new();
+    public List<Review> Reviews { get; } = new();
 }

@@ -19,6 +19,7 @@ jsonDataStore.LoadProducts(db);
 jsonDataStore.LoadCarts(db);
 jsonDataStore.LoadWallets(db);
 jsonDataStore.LoadOrders(db);
+jsonDataStore.LoadReviews(db);
 SeedData.SeedUsersIfEmpty(db);
 SeedData.SeedProductsIfEmpty(db);
 
@@ -33,4 +34,5 @@ finally
     jsonDataStore.SaveCarts(db);
     jsonDataStore.SaveWallets(db);
     jsonDataStore.SaveOrders(db);
+    jsonDataStore.SaveReviews(db);
 }
