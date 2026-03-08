@@ -1,10 +1,18 @@
 using SwiftCart.Application.Helpers;
+using SwiftCart.Application.Services;
 using SwiftCart.Domain.Entities;
 
 namespace SwiftCart.Presentation.Menus;
 
 public class CustomerMenu
 {
+    private readonly AuthService _authService;
+
+    public CustomerMenu(AuthService authService)
+    {
+        _authService = authService;
+    }
+
     public void Run(Customer user)
     {
         while (true)
@@ -27,6 +35,8 @@ public class CustomerMenu
 
             if (choice == 12)
             {
+                _authService.Logout();
+                Console.WriteLine("You have been logged out.");
                 return;
             }
 
