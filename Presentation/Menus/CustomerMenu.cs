@@ -1,6 +1,7 @@
 using SwiftCart.Application.Helpers;
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
+using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Presentation.Menus;
 
@@ -12,9 +13,10 @@ public class CustomerMenu
     private readonly IWalletService _walletService;
     private readonly IOrderService _orderService;
     private readonly IReviewService _reviewService;
+    private readonly AppDb _db;
     private readonly Action _saveAll;
 
-    public CustomerMenu(IAuthService authService, IProductService productService, ICartService cartService, IWalletService walletService, IOrderService orderService, IReviewService reviewService, Action saveAll)
+    public CustomerMenu(IAuthService authService, IProductService productService, ICartService cartService, IWalletService walletService, IOrderService orderService, IReviewService reviewService, AppDb db, Action saveAll)
     {
         _authService = authService;
         _productService = productService;
@@ -22,6 +24,7 @@ public class CustomerMenu
         _walletService = walletService;
         _orderService = orderService;
         _reviewService = reviewService;
+        _db = db;
         _saveAll = saveAll;
     }
 
@@ -41,11 +44,12 @@ public class CustomerMenu
             Console.WriteLine("9.  View Order History");
             Console.WriteLine("10. Track Orders");
             Console.WriteLine("11. Review Products");
-            Console.WriteLine("12. Logout");
+            Console.WriteLine("12. View Notifications");
+            Console.WriteLine("13. Logout");
 
-            int choice = InputHelper.ReadInt("Select option: ", 1, 12);
+            int choice = InputHelper.ReadInt("Select option: ", 1, 13);
 
-            if (choice == 12)
+            if (choice == 13)
             {
                 _authService.Logout();
                 Console.WriteLine("You have been logged out.");
@@ -87,6 +91,9 @@ public class CustomerMenu
                     break;
                 case 11:
                     HandleReviewProducts(user);
+                    break;
+                case 12:
+                    HandleViewNotifications(user);
                     break;
                 default:
                     Console.WriteLine("Not implemented yet.");
@@ -366,6 +373,37 @@ public class CustomerMenu
                 Console.WriteLine("Review saved successfully.");
             else
                 Console.WriteLine($"Failed to save review: {errorMessage ?? "Unknown error."}");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
+    }
+
+    private void HandleViewNotifications(Customer user)
+    {
+        try
+        {
+            var notifications = _db.Notifications
+                .Where(n => n.CustomerId == user.Id)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToList();
+
+            if (notifications.Count == 0)
+            {
+                Console.WriteLine("You have no notifications.");
+                return;
+            }
+
+            int unreadCount = notifications.Count(n => !n.IsRead);
+            Console.WriteLine($"\n--- Notifications ({unreadCount} unread) ---");
+
+            foreach (var n in notifications)
+            {
+                string readMark = n.IsRead ? "[Read]  " : "[New]   ";
+                Console.WriteLine($"  {readMark} {n.CreatedAt:yyyy-MM-dd HH:mm} - {n.Message}");
+                n.IsRead = true;
+            }
         }
         catch (Exception)
         {

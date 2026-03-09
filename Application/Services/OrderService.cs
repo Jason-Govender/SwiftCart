@@ -11,6 +11,7 @@ public class OrderService : IOrderService
     private readonly ICartService _cartService;
     private readonly IWalletService _walletService;
     private readonly IProductService _productService;
+    private readonly List<IOrderObserver> _observers = new();
 
     public OrderService(AppDb db, ICartService cartService, IWalletService walletService, IProductService productService)
     {
@@ -18,6 +19,17 @@ public class OrderService : IOrderService
         _cartService = cartService;
         _walletService = walletService;
         _productService = productService;
+    }
+
+    public void Subscribe(IOrderObserver observer)
+    {
+        if (!_observers.Contains(observer))
+            _observers.Add(observer);
+    }
+
+    public void Unsubscribe(IOrderObserver observer)
+    {
+        _observers.Remove(observer);
     }
 
     /// <summary>
@@ -91,6 +103,7 @@ public class OrderService : IOrderService
             });
 
             cart.Items.Clear();
+            NotifyOrderPlaced(order);
             return (true, order, null);
         }
         catch (Exception)
@@ -122,8 +135,22 @@ public class OrderService : IOrderService
         var order = _db.Orders.FirstOrDefault(o => o.Id == orderId);
         if (order == null)
             return false;
+        var previousStatus = order.Status;
         order.Status = status;
+        NotifyOrderStatusChanged(order, previousStatus);
         return true;
+    }
+
+    private void NotifyOrderPlaced(Order order)
+    {
+        foreach (var observer in _observers)
+            observer.OnOrderPlaced(order);
+    }
+
+    private void NotifyOrderStatusChanged(Order order, OrderStatus previousStatus)
+    {
+        foreach (var observer in _observers)
+            observer.OnOrderStatusChanged(order, previousStatus);
     }
 
     private int GetNextOrderId()

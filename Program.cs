@@ -1,3 +1,4 @@
+using SwiftCart.Application.Observers;
 using SwiftCart.Application.Services;
 using SwiftCart.Domain.Factories;
 using SwiftCart.Infrastructure.Data;
@@ -12,6 +13,8 @@ ProductService productService = new ProductService(db);
 CartService cartService = new CartService(db);
 WalletService walletService = new WalletService(db);
 OrderService orderService = new OrderService(db, cartService, walletService, productService);
+OrderNotificationObserver notificationObserver = new OrderNotificationObserver(db);
+orderService.Subscribe(notificationObserver);
 ReviewService reviewService = new ReviewService(db, productService);
 ReportService reportService = new ReportService(db);
 Action saveAll = () =>
@@ -23,8 +26,9 @@ Action saveAll = () =>
     jsonDataStore.SaveOrders(db);
     jsonDataStore.SaveReviews(db);
     jsonDataStore.SavePayments(db);
+    jsonDataStore.SaveNotifications(db);
 };
-CustomerMenu customerMenu = new CustomerMenu(authService, productService, cartService, walletService, orderService, reviewService, saveAll);
+CustomerMenu customerMenu = new CustomerMenu(authService, productService, cartService, walletService, orderService, reviewService, db, saveAll);
 AdministratorMenu administratorMenu = new AdministratorMenu(authService, productService, orderService, reviewService, reportService, saveAll);
 MainMenu mainMenu = new MainMenu(authService, customerMenu, administratorMenu, saveAll);
 
@@ -35,6 +39,7 @@ jsonDataStore.LoadWallets(db);
 jsonDataStore.LoadOrders(db);
 jsonDataStore.LoadReviews(db);
 jsonDataStore.LoadPayments(db);
+jsonDataStore.LoadNotifications(db);
 SeedData.SeedUsersIfEmpty(db, userFactory);
 SeedData.SeedProductsIfEmpty(db);
 
@@ -51,4 +56,5 @@ finally
     jsonDataStore.SaveOrders(db);
     jsonDataStore.SaveReviews(db);
     jsonDataStore.SavePayments(db);
+    jsonDataStore.SaveNotifications(db);
 }
