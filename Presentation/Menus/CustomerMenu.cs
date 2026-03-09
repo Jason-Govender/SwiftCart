@@ -1,19 +1,19 @@
 using SwiftCart.Application.Helpers;
-using SwiftCart.Application.Services;
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 
 namespace SwiftCart.Presentation.Menus;
 
 public class CustomerMenu
 {
-    private readonly AuthService _authService;
-    private readonly ProductService _productService;
-    private readonly CartService _cartService;
-    private readonly WalletService _walletService;
-    private readonly OrderService _orderService;
-    private readonly ReviewService _reviewService;
+    private readonly IAuthService _authService;
+    private readonly IProductService _productService;
+    private readonly ICartService _cartService;
+    private readonly IWalletService _walletService;
+    private readonly IOrderService _orderService;
+    private readonly IReviewService _reviewService;
 
-    public CustomerMenu(AuthService authService, ProductService productService, CartService cartService, WalletService walletService, OrderService orderService, ReviewService reviewService)
+    public CustomerMenu(IAuthService authService, IProductService productService, ICartService cartService, IWalletService walletService, IOrderService orderService, IReviewService reviewService)
     {
         _authService = authService;
         _productService = productService;

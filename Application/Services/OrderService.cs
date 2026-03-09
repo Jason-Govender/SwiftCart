@@ -1,17 +1,18 @@
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
-public class OrderService
+public class OrderService : IOrderService
 {
     private readonly AppDb _db;
-    private readonly CartService _cartService;
-    private readonly WalletService _walletService;
-    private readonly ProductService _productService;
+    private readonly ICartService _cartService;
+    private readonly IWalletService _walletService;
+    private readonly IProductService _productService;
 
-    public OrderService(AppDb db, CartService cartService, WalletService walletService, ProductService productService)
+    public OrderService(AppDb db, ICartService cartService, IWalletService walletService, IProductService productService)
     {
         _db = db;
         _cartService = cartService;

@@ -1,11 +1,12 @@
 using System.Globalization;
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
-public class ReportService
+public class ReportService : IReportService
 {
     private readonly AppDb _db;
 

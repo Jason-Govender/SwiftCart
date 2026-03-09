@@ -1,9 +1,10 @@
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
-public class WalletService
+public class WalletService : IWalletService
 {
     private readonly AppDb _db;
 

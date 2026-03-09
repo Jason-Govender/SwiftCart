@@ -1,5 +1,5 @@
 using SwiftCart.Application.Helpers;
-using SwiftCart.Application.Services;
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
 
@@ -8,13 +8,13 @@ namespace SwiftCart.Presentation.Menus;
 public class AdministratorMenu
 {
     private const int LowStockThresholdDefault = 5;
-    private readonly AuthService _authService;
-    private readonly ProductService _productService;
-    private readonly OrderService _orderService;
-    private readonly ReviewService _reviewService;
-    private readonly ReportService _reportService;
+    private readonly IAuthService _authService;
+    private readonly IProductService _productService;
+    private readonly IOrderService _orderService;
+    private readonly IReviewService _reviewService;
+    private readonly IReportService _reportService;
 
-    public AdministratorMenu(AuthService authService, ProductService productService, OrderService orderService, ReviewService reviewService, ReportService reportService)
+    public AdministratorMenu(IAuthService authService, IProductService productService, IOrderService orderService, IReviewService reviewService, IReportService reportService)
     {
         _authService = authService;
         _productService = productService;

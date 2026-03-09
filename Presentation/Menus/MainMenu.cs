@@ -1,17 +1,17 @@
 using SwiftCart.Application.Enums;
 using SwiftCart.Application.Helpers;
-using SwiftCart.Application.Services;
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 
 namespace SwiftCart.Presentation.Menus;
 
 public class MainMenu
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
     private readonly CustomerMenu _customerMenu;
     private readonly AdministratorMenu _administratorMenu;
 
-    public MainMenu(AuthService authService, CustomerMenu customerMenu, AdministratorMenu administratorMenu)
+    public MainMenu(IAuthService authService, CustomerMenu customerMenu, AdministratorMenu administratorMenu)
     {
         _authService = authService;
         _customerMenu = customerMenu;
