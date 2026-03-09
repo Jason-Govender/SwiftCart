@@ -1,17 +1,18 @@
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
-public class OrderService
+public class OrderService : IOrderService
 {
     private readonly AppDb _db;
-    private readonly CartService _cartService;
-    private readonly WalletService _walletService;
-    private readonly ProductService _productService;
+    private readonly ICartService _cartService;
+    private readonly IWalletService _walletService;
+    private readonly IProductService _productService;
 
-    public OrderService(AppDb db, CartService cartService, WalletService walletService, ProductService productService)
+    public OrderService(AppDb db, ICartService cartService, IWalletService walletService, IProductService productService)
     {
         _db = db;
         _cartService = cartService;
@@ -25,59 +26,77 @@ public class OrderService
     /// </summary>
     public (bool Success, Order? Order, string? ErrorMessage) PlaceOrder(int customerId)
     {
-        var cart = _cartService.GetCart(customerId);
-        if (cart.Items == null || cart.Items.Count == 0)
-            return (false, null, "Your cart is empty.");
-
-        decimal total = 0;
-        foreach (var item in cart.Items)
+        try
         {
-            var product = _productService.GetById(item.ProductId);
-            if (product == null)
-                return (false, null, $"Product #{item.ProductId} is no longer available.");
-            if (product.StockQuantity < item.Quantity)
-                return (false, null, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, requested: {item.Quantity}.");
-            total += item.Quantity * item.UnitPrice;
-        }
+            var cart = _cartService.GetCart(customerId);
+            if (cart.Items == null || cart.Items.Count == 0)
+                return (false, null, "Your cart is empty.");
 
-        if (_walletService.GetBalance(customerId) < total)
-            return (false, null, "Insufficient wallet balance.");
-
-        if (!_walletService.DeductFunds(customerId, total))
-            return (false, null, "Failed to deduct funds from wallet.");
-
-        int orderId = GetNextOrderId();
-        var order = new Order
-        {
-            Id = orderId,
-            CustomerId = customerId,
-            TotalAmount = total,
-            Status = OrderStatus.Pending,
-            CreatedAt = DateTime.UtcNow,
-            Items = new List<OrderItem>()
-        };
-
-        int orderItemId = GetNextOrderItemId();
-        foreach (var item in cart.Items)
-        {
-            order.Items.Add(new OrderItem
+            decimal total = 0;
+            foreach (var item in cart.Items)
             {
-                Id = orderItemId++,
-                OrderId = order.Id,
-                ProductId = item.ProductId,
-                Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
-            });
-            if (!_productService.DeductStock(item.ProductId, item.Quantity))
-            {
-                _walletService.AddFunds(customerId, total);
-                return (false, null, "Failed to reserve stock. Please try again.");
+                var product = _productService.GetById(item.ProductId);
+                if (product == null)
+                    return (false, null, $"Product #{item.ProductId} is no longer available.");
+                if (product.StockQuantity < item.Quantity)
+                    return (false, null, $"Insufficient stock for {product.Name}. Available: {product.StockQuantity}, requested: {item.Quantity}.");
+                total += item.Quantity * item.UnitPrice;
             }
-        }
 
-        _db.Orders.Add(order);
-        cart.Items.Clear();
-        return (true, order, null);
+            if (_walletService.GetBalance(customerId) < total)
+                return (false, null, "Insufficient wallet balance.");
+
+            if (!_walletService.DeductFunds(customerId, total))
+                return (false, null, "Failed to deduct funds from wallet.");
+
+            int orderId = GetNextOrderId();
+            var order = new Order
+            {
+                Id = orderId,
+                CustomerId = customerId,
+                TotalAmount = total,
+                Status = OrderStatus.Pending,
+                CreatedAt = DateTime.UtcNow,
+                Items = new List<OrderItem>()
+            };
+
+            int orderItemId = GetNextOrderItemId();
+            foreach (var item in cart.Items)
+            {
+                order.Items.Add(new OrderItem
+                {
+                    Id = orderItemId++,
+                    OrderId = order.Id,
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice
+                });
+                if (!_productService.DeductStock(item.ProductId, item.Quantity))
+                {
+                    _walletService.AddFunds(customerId, total);
+                    return (false, null, "Failed to reserve stock. Please try again.");
+                }
+            }
+
+            _db.Orders.Add(order);
+
+            _db.Payments.Add(new Payment
+            {
+                Id = GetNextPaymentId(),
+                OrderId = order.Id,
+                CustomerId = customerId,
+                Amount = total,
+                Method = "Wallet",
+                PaidAt = DateTime.UtcNow
+            });
+
+            cart.Items.Clear();
+            return (true, order, null);
+        }
+        catch (Exception)
+        {
+            return (false, null, "An unexpected error occurred while placing your order.");
+        }
     }
 
     public List<Order> GetOrdersByCustomer(int customerId)
@@ -112,6 +131,13 @@ public class OrderService
         if (_db.Orders == null || _db.Orders.Count == 0)
             return 1;
         return _db.Orders.Max(o => o.Id) + 1;
+    }
+
+    private int GetNextPaymentId()
+    {
+        if (_db.Payments == null || _db.Payments.Count == 0)
+            return 1;
+        return _db.Payments.Max(p => p.Id) + 1;
     }
 
     private int GetNextOrderItemId()

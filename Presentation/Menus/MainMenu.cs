@@ -1,21 +1,23 @@
 using SwiftCart.Application.Enums;
 using SwiftCart.Application.Helpers;
-using SwiftCart.Application.Services;
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 
 namespace SwiftCart.Presentation.Menus;
 
 public class MainMenu
 {
-    private readonly AuthService _authService;
+    private readonly IAuthService _authService;
     private readonly CustomerMenu _customerMenu;
     private readonly AdministratorMenu _administratorMenu;
+    private readonly Action _saveAll;
 
-    public MainMenu(AuthService authService, CustomerMenu customerMenu, AdministratorMenu administratorMenu)
+    public MainMenu(IAuthService authService, CustomerMenu customerMenu, AdministratorMenu administratorMenu, Action saveAll)
     {
         _authService = authService;
         _customerMenu = customerMenu;
         _administratorMenu = administratorMenu;
+        _saveAll = saveAll;
     }
 
     public void Run()
@@ -33,9 +35,11 @@ public class MainMenu
             {
                 case 1:
                     HandleRegister();
+                    _saveAll();
                     break;
                 case 2:
                     HandleLogin();
+                    _saveAll();
                     break;
                 case 3:
                     Console.WriteLine("Goodbye!");
@@ -46,44 +50,58 @@ public class MainMenu
 
     private void HandleRegister()
     {
-        string username = InputHelper.ReadString("Username: ");
-        string password = InputHelper.ReadString("Password: ");
-
-        RegistrationResult result = _authService.Register(username, password);
-
-        switch (result)
+        try
         {
-            case RegistrationResult.Success:
-                Console.WriteLine("Registration successful.");
-                break;
-            case RegistrationResult.EmptyCredentials:
-                Console.WriteLine("Registration failed. Username and password are required.");
-                break;
-            case RegistrationResult.WeakPassword:
-                Console.WriteLine("Registration failed. Password must be at least 8 characters with uppercase, lowercase, number, and symbol.");
-                break;
-            case RegistrationResult.DuplicateUsername:
-                Console.WriteLine("Registration failed. That username is already taken.");
-                break;
+            string username = InputHelper.ReadString("Username: ");
+            string password = InputHelper.ReadString("Password: ");
+
+            RegistrationResult result = _authService.Register(username, password);
+
+            switch (result)
+            {
+                case RegistrationResult.Success:
+                    Console.WriteLine("Registration successful.");
+                    break;
+                case RegistrationResult.EmptyCredentials:
+                    Console.WriteLine("Registration failed. Username and password are required.");
+                    break;
+                case RegistrationResult.WeakPassword:
+                    Console.WriteLine("Registration failed. Password must be at least 8 characters with uppercase, lowercase, number, and symbol.");
+                    break;
+                case RegistrationResult.DuplicateUsername:
+                    Console.WriteLine("Registration failed. That username is already taken.");
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 
     private void HandleLogin()
     {
-        string username = InputHelper.ReadString("Username: ");
-        string password = InputHelper.ReadString("Password: ");
-
-        User? user = _authService.Login(username, password);
-
-        if (user == null)
+        try
         {
-            Console.WriteLine("Login failed. Invalid username or password.");
-            return;
-        }
+            string username = InputHelper.ReadString("Username: ");
+            string password = InputHelper.ReadString("Password: ");
 
-        if (user is Customer customer)
-            _customerMenu.Run(customer);
-        else if (user is Administrator admin)
-            _administratorMenu.Run(admin);
+            User? user = _authService.Login(username, password);
+
+            if (user == null)
+            {
+                Console.WriteLine("Login failed. Invalid username or password.");
+                return;
+            }
+
+            if (user is Customer customer)
+                _customerMenu.Run(customer);
+            else if (user is Administrator admin)
+                _administratorMenu.Run(admin);
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 }

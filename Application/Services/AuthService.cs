@@ -1,10 +1,11 @@
 using SwiftCart.Application.Enums;
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
-public class AuthService
+public class AuthService : IAuthService
 {
     private readonly AppDb _db;
 

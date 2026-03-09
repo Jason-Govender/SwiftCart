@@ -1,9 +1,10 @@
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
-public class ProductService
+public class ProductService : IProductService
 {
     private readonly AppDb _db;
 
