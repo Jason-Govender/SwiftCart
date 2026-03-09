@@ -1,6 +1,8 @@
 using SwiftCart.Application.Enums;
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
+using SwiftCart.Domain.Enums;
+using SwiftCart.Domain.Factories;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
@@ -8,12 +10,14 @@ namespace SwiftCart.Application.Services;
 public class AuthService : IAuthService
 {
     private readonly AppDb _db;
+    private readonly IUserFactory _userFactory;
 
     public User? CurrentUser { get; private set; }
 
-    public AuthService(AppDb db)
+    public AuthService(AppDb db, IUserFactory userFactory)
     {
         _db = db;
+        _userFactory = userFactory;
     }
 
     public RegistrationResult Register(string username, string password)
@@ -28,12 +32,7 @@ public class AuthService : IAuthService
             return RegistrationResult.DuplicateUsername;
 
         int nextId = _db.Users.Count > 0 ? _db.Users.Max(u => u.Id) + 1 : 1;
-        Customer customer = new Customer
-        {
-            Id = nextId,
-            Username = username.Trim(),
-            Password = password
-        };
+        User customer = _userFactory.Create(UserRole.Customer, nextId, username.Trim(), password);
         _db.Users.Add(customer);
         return RegistrationResult.Success;
     }

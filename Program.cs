@@ -1,11 +1,13 @@
 using SwiftCart.Application.Services;
+using SwiftCart.Domain.Factories;
 using SwiftCart.Infrastructure.Data;
 using SwiftCart.Infrastructure.Persistence;
 using SwiftCart.Presentation.Menus;
 
 AppDb db = new AppDb();
 JsonDataStore jsonDataStore = new JsonDataStore();
-AuthService authService = new AuthService(db);
+UserFactory userFactory = new UserFactory();
+AuthService authService = new AuthService(db, userFactory);
 ProductService productService = new ProductService(db);
 CartService cartService = new CartService(db);
 WalletService walletService = new WalletService(db);
@@ -33,7 +35,7 @@ jsonDataStore.LoadWallets(db);
 jsonDataStore.LoadOrders(db);
 jsonDataStore.LoadReviews(db);
 jsonDataStore.LoadPayments(db);
-SeedData.SeedUsersIfEmpty(db);
+SeedData.SeedUsersIfEmpty(db, userFactory);
 SeedData.SeedProductsIfEmpty(db);
 
 try
