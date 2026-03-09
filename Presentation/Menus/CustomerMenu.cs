@@ -97,159 +97,229 @@ public class CustomerMenu
 
     private void HandleBrowseProducts()
     {
-        var products = _productService.GetAll();
-        if (products.Count == 0)
+        try
         {
-            Console.WriteLine("No products available.");
-            return;
+            var products = _productService.GetAll();
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No products available.");
+                return;
+            }
+            foreach (var p in products)
+            {
+                var avg = _reviewService.GetAverageRating(p.Id);
+                var count = _reviewService.GetReviewCount(p.Id);
+                string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+                Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+            }
         }
-        foreach (var p in products)
+        catch (Exception)
         {
-            var avg = _reviewService.GetAverageRating(p.Id);
-            var count = _reviewService.GetReviewCount(p.Id);
-            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 
     private void HandleSearchProducts()
     {
-        string term = InputHelper.ReadString("Search term: ");
-        var products = _productService.Search(term);
-        if (products.Count == 0)
+        try
         {
-            Console.WriteLine("No matching products.");
-            return;
+            string term = InputHelper.ReadString("Search term: ");
+            var products = _productService.Search(term);
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No matching products.");
+                return;
+            }
+            foreach (var p in products)
+            {
+                var avg = _reviewService.GetAverageRating(p.Id);
+                var count = _reviewService.GetReviewCount(p.Id);
+                string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+                Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+            }
         }
-        foreach (var p in products)
+        catch (Exception)
         {
-            var avg = _reviewService.GetAverageRating(p.Id);
-            var count = _reviewService.GetReviewCount(p.Id);
-            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 
     private void HandleAddToCart(Customer user)
     {
-        int productId = InputHelper.ReadInt("Product ID: ", 1, int.MaxValue);
-        int quantity = InputHelper.ReadInt("Quantity: ", 1, 9999);
-        if (_cartService.AddItem(user.Id, productId, quantity))
-            Console.WriteLine("Product added to cart.");
-        else
-            Console.WriteLine("Invalid product ID or insufficient stock.");
+        try
+        {
+            int productId = InputHelper.ReadInt("Product ID: ", 1, int.MaxValue);
+            int quantity = InputHelper.ReadInt("Quantity: ", 1, 9999);
+            if (_cartService.AddItem(user.Id, productId, quantity))
+                Console.WriteLine("Product added to cart.");
+            else
+                Console.WriteLine("Invalid product ID or insufficient stock.");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleViewCart(Customer user)
     {
-        var cart = _cartService.GetCart(user.Id);
-        if (cart.Items.Count == 0)
+        try
         {
-            Console.WriteLine("Your cart is empty.");
-            return;
+            var cart = _cartService.GetCart(user.Id);
+            if (cart.Items.Count == 0)
+            {
+                Console.WriteLine("Your cart is empty.");
+                return;
+            }
+            decimal total = 0;
+            foreach (var item in cart.Items)
+            {
+                var product = _productService.GetById(item.ProductId);
+                string name = product?.Name ?? $"Product #{item.ProductId}";
+                decimal lineTotal = item.Quantity * item.UnitPrice;
+                total += lineTotal;
+                Console.WriteLine($"  [{item.Id}] {name} x {item.Quantity} @ ${item.UnitPrice:N2} = ${lineTotal:N2}");
+            }
+            Console.WriteLine($"  Total: ${total:N2}");
         }
-        decimal total = 0;
-        foreach (var item in cart.Items)
+        catch (Exception)
         {
-            var product = _productService.GetById(item.ProductId);
-            string name = product?.Name ?? $"Product #{item.ProductId}";
-            decimal lineTotal = item.Quantity * item.UnitPrice;
-            total += lineTotal;
-            Console.WriteLine($"  [{item.Id}] {name} x {item.Quantity} @ ${item.UnitPrice:N2} = ${lineTotal:N2}");
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
-        Console.WriteLine($"  Total: ${total:N2}");
     }
 
     private void HandleUpdateCart(Customer user)
     {
-        var cart = _cartService.GetCart(user.Id);
-        if (cart.Items.Count == 0)
+        try
         {
-            Console.WriteLine("Your cart is empty.");
-            return;
+            var cart = _cartService.GetCart(user.Id);
+            if (cart.Items.Count == 0)
+            {
+                Console.WriteLine("Your cart is empty.");
+                return;
+            }
+            decimal total = 0;
+            foreach (var item in cart.Items)
+            {
+                var product = _productService.GetById(item.ProductId);
+                string name = product?.Name ?? $"Product #{item.ProductId}";
+                decimal lineTotal = item.Quantity * item.UnitPrice;
+                total += lineTotal;
+                Console.WriteLine($"  [{item.Id}] {name} x {item.Quantity} @ ${item.UnitPrice:N2} = ${lineTotal:N2}");
+            }
+            Console.WriteLine($"  Total: ${total:N2}");
+            int cartItemId = InputHelper.ReadInt("Cart item ID to update: ", 1, int.MaxValue);
+            int newQuantity = InputHelper.ReadInt("New quantity (0 to remove): ", 0, 9999);
+            if (_cartService.UpdateItemQuantity(user.Id, cartItemId, newQuantity))
+                Console.WriteLine(newQuantity == 0 ? "Item removed from cart." : "Cart updated.");
+            else
+                Console.WriteLine("Item not found in your cart.");
         }
-        decimal total = 0;
-        foreach (var item in cart.Items)
+        catch (Exception)
         {
-            var product = _productService.GetById(item.ProductId);
-            string name = product?.Name ?? $"Product #{item.ProductId}";
-            decimal lineTotal = item.Quantity * item.UnitPrice;
-            total += lineTotal;
-            Console.WriteLine($"  [{item.Id}] {name} x {item.Quantity} @ ${item.UnitPrice:N2} = ${lineTotal:N2}");
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
-        Console.WriteLine($"  Total: ${total:N2}");
-        int cartItemId = InputHelper.ReadInt("Cart item ID to update: ", 1, int.MaxValue);
-        int newQuantity = InputHelper.ReadInt("New quantity (0 to remove): ", 0, 9999);
-        if (_cartService.UpdateItemQuantity(user.Id, cartItemId, newQuantity))
-            Console.WriteLine(newQuantity == 0 ? "Item removed from cart." : "Cart updated.");
-        else
-            Console.WriteLine("Item not found in your cart.");
     }
 
     private void HandleViewWalletBalance(Customer user)
     {
-        decimal balance = _walletService.GetBalance(user.Id);
-        Console.WriteLine($"Your wallet balance: ${balance:N2}");
+        try
+        {
+            decimal balance = _walletService.GetBalance(user.Id);
+            Console.WriteLine($"Your wallet balance: ${balance:N2}");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleAddWalletFunds(Customer user)
     {
-        decimal amount = InputHelper.ReadDecimal("Amount to add: $", 0.01m, 999_999.99m);
-        if (_walletService.AddFunds(user.Id, amount))
-            Console.WriteLine($"${amount:N2} added to your wallet.");
-        else
-            Console.WriteLine("Failed to add funds.");
+        try
+        {
+            decimal amount = InputHelper.ReadDecimal("Amount to add: $", 0.01m, 999_999.99m);
+            if (_walletService.AddFunds(user.Id, amount))
+                Console.WriteLine($"${amount:N2} added to your wallet.");
+            else
+                Console.WriteLine("Failed to add funds.");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleCheckout(Customer user)
     {
-        var (success, order, errorMessage) = _orderService.PlaceOrder(user.Id);
-        if (success && order != null)
-            Console.WriteLine($"Order placed successfully. Order #{order.Id} - Total: ${order.TotalAmount:N2}");
-        else
-            Console.WriteLine($"Checkout failed: {errorMessage ?? "Unknown error."}");
+        try
+        {
+            var (success, order, errorMessage) = _orderService.PlaceOrder(user.Id);
+            if (success && order != null)
+                Console.WriteLine($"Order placed successfully. Order #{order.Id} - Total: ${order.TotalAmount:N2}");
+            else
+                Console.WriteLine($"Checkout failed: {errorMessage ?? "Unknown error."}");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleViewOrderHistory(Customer user)
     {
-        var orders = _orderService.GetOrdersByCustomer(user.Id);
-        if (orders.Count == 0)
+        try
         {
-            Console.WriteLine("You have no orders yet.");
-            return;
+            var orders = _orderService.GetOrdersByCustomer(user.Id);
+            if (orders.Count == 0)
+            {
+                Console.WriteLine("You have no orders yet.");
+                return;
+            }
+            foreach (var o in orders)
+                Console.WriteLine($"  Order #{o.Id} - {o.CreatedAt:yyyy-MM-dd HH:mm} - ${o.TotalAmount:N2} - {o.Status}");
         }
-        foreach (var o in orders)
-            Console.WriteLine($"  Order #{o.Id} - {o.CreatedAt:yyyy-MM-dd HH:mm} - ${o.TotalAmount:N2} - {o.Status}");
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleTrackOrders(Customer user)
     {
-        var orders = _orderService.GetOrdersByCustomer(user.Id);
-        if (orders.Count == 0)
+        try
         {
-            Console.WriteLine("You have no orders to track.");
-            return;
-        }
-        foreach (var o in orders)
-            Console.WriteLine($"  Order #{o.Id} - Status: {o.Status} - ${o.TotalAmount:N2} - {o.CreatedAt:yyyy-MM-dd HH:mm}");
-        int orderId = InputHelper.ReadInt("Enter order ID for details (or 0 to skip): ", 0, int.MaxValue);
-        if (orderId == 0)
-            return;
-        var order = _orderService.GetOrderById(orderId);
-        if (order == null || order.CustomerId != user.Id)
-        {
-            Console.WriteLine("Order not found.");
-            return;
-        }
-        Console.WriteLine($"Order #{order.Id} - Status: {order.Status} - Total: ${order.TotalAmount:N2} - Placed: {order.CreatedAt:yyyy-MM-dd HH:mm}");
-        if (order.Items != null && order.Items.Count > 0)
-        {
-            foreach (var item in order.Items)
+            var orders = _orderService.GetOrdersByCustomer(user.Id);
+            if (orders.Count == 0)
             {
-                var product = _productService.GetById(item.ProductId);
-                string name = product?.Name ?? $"Product #{item.ProductId}";
-                Console.WriteLine($"    {name} x {item.Quantity} @ ${item.UnitPrice:N2}");
+                Console.WriteLine("You have no orders to track.");
+                return;
             }
+            foreach (var o in orders)
+                Console.WriteLine($"  Order #{o.Id} - Status: {o.Status} - ${o.TotalAmount:N2} - {o.CreatedAt:yyyy-MM-dd HH:mm}");
+            int orderId = InputHelper.ReadInt("Enter order ID for details (or 0 to skip): ", 0, int.MaxValue);
+            if (orderId == 0)
+                return;
+            var order = _orderService.GetOrderById(orderId);
+            if (order == null || order.CustomerId != user.Id)
+            {
+                Console.WriteLine("Order not found.");
+                return;
+            }
+            Console.WriteLine($"Order #{order.Id} - Status: {order.Status} - Total: ${order.TotalAmount:N2} - Placed: {order.CreatedAt:yyyy-MM-dd HH:mm}");
+            if (order.Items != null && order.Items.Count > 0)
+            {
+                foreach (var item in order.Items)
+                {
+                    var product = _productService.GetById(item.ProductId);
+                    string name = product?.Name ?? $"Product #{item.ProductId}";
+                    Console.WriteLine($"    {name} x {item.Quantity} @ ${item.UnitPrice:N2}");
+                }
+            }
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 

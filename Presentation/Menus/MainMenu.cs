@@ -46,44 +46,58 @@ public class MainMenu
 
     private void HandleRegister()
     {
-        string username = InputHelper.ReadString("Username: ");
-        string password = InputHelper.ReadString("Password: ");
-
-        RegistrationResult result = _authService.Register(username, password);
-
-        switch (result)
+        try
         {
-            case RegistrationResult.Success:
-                Console.WriteLine("Registration successful.");
-                break;
-            case RegistrationResult.EmptyCredentials:
-                Console.WriteLine("Registration failed. Username and password are required.");
-                break;
-            case RegistrationResult.WeakPassword:
-                Console.WriteLine("Registration failed. Password must be at least 8 characters with uppercase, lowercase, number, and symbol.");
-                break;
-            case RegistrationResult.DuplicateUsername:
-                Console.WriteLine("Registration failed. That username is already taken.");
-                break;
+            string username = InputHelper.ReadString("Username: ");
+            string password = InputHelper.ReadString("Password: ");
+
+            RegistrationResult result = _authService.Register(username, password);
+
+            switch (result)
+            {
+                case RegistrationResult.Success:
+                    Console.WriteLine("Registration successful.");
+                    break;
+                case RegistrationResult.EmptyCredentials:
+                    Console.WriteLine("Registration failed. Username and password are required.");
+                    break;
+                case RegistrationResult.WeakPassword:
+                    Console.WriteLine("Registration failed. Password must be at least 8 characters with uppercase, lowercase, number, and symbol.");
+                    break;
+                case RegistrationResult.DuplicateUsername:
+                    Console.WriteLine("Registration failed. That username is already taken.");
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 
     private void HandleLogin()
     {
-        string username = InputHelper.ReadString("Username: ");
-        string password = InputHelper.ReadString("Password: ");
-
-        User? user = _authService.Login(username, password);
-
-        if (user == null)
+        try
         {
-            Console.WriteLine("Login failed. Invalid username or password.");
-            return;
-        }
+            string username = InputHelper.ReadString("Username: ");
+            string password = InputHelper.ReadString("Password: ");
 
-        if (user is Customer customer)
-            _customerMenu.Run(customer);
-        else if (user is Administrator admin)
-            _administratorMenu.Run(admin);
+            User? user = _authService.Login(username, password);
+
+            if (user == null)
+            {
+                Console.WriteLine("Login failed. Invalid username or password.");
+                return;
+            }
+
+            if (user is Customer customer)
+                _customerMenu.Run(customer);
+            else if (user is Administrator admin)
+                _administratorMenu.Run(admin);
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 }

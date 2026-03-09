@@ -89,230 +89,314 @@ public class AdministratorMenu
 
     private void HandleAddProduct()
     {
-        string name = InputHelper.ReadString("Product name: ");
-        string description = InputHelper.ReadString("Description: ");
-        decimal price = InputHelper.ReadDecimal("Price: ", 0, 999999.99m);
-        int stock = InputHelper.ReadInt("Initial stock: ", 0, 100000);
+        try
+        {
+            string name = InputHelper.ReadString("Product name: ");
+            string description = InputHelper.ReadString("Description: ");
+            decimal price = InputHelper.ReadDecimal("Price: ", 0, 999999.99m);
+            int stock = InputHelper.ReadInt("Initial stock: ", 0, 100000);
 
-        if (_productService.Add(name, description, price, stock))
-            Console.WriteLine("Product added successfully.");
-        else
-            Console.WriteLine("Failed to add product. Name cannot be empty.");
+            if (_productService.Add(name, description, price, stock))
+                Console.WriteLine("Product added successfully.");
+            else
+                Console.WriteLine("Failed to add product. Name cannot be empty.");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleUpdateProduct()
     {
-        var products = _productService.GetAll();
-        if (products.Count == 0)
+        try
         {
-            Console.WriteLine("No products to update.");
-            return;
-        }
-        foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name}");
-        int id = InputHelper.ReadInt("Product ID to update: ", products.Min(p => p.Id), products.Max(p => p.Id));
-        string name = InputHelper.ReadString("New name: ");
-        string description = InputHelper.ReadString("New description: ");
-        decimal price = InputHelper.ReadDecimal("New price: ", 0, 999999.99m);
+            var products = _productService.GetAll();
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No products to update.");
+                return;
+            }
+            foreach (var p in products)
+                Console.WriteLine($"  [{p.Id}] {p.Name}");
+            int id = InputHelper.ReadInt("Product ID to update: ", products.Min(p => p.Id), products.Max(p => p.Id));
+            string name = InputHelper.ReadString("New name: ");
+            string description = InputHelper.ReadString("New description: ");
+            decimal price = InputHelper.ReadDecimal("New price: ", 0, 999999.99m);
 
-        if (_productService.Update(id, name, description, price))
-            Console.WriteLine("Product updated successfully.");
-        else
-            Console.WriteLine("Update failed. Product not found or name is empty.");
+            if (_productService.Update(id, name, description, price))
+                Console.WriteLine("Product updated successfully.");
+            else
+                Console.WriteLine("Update failed. Product not found or name is empty.");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleDeleteProduct()
     {
-        var products = _productService.GetAll();
-        if (products.Count == 0)
+        try
         {
-            Console.WriteLine("No products to delete.");
-            return;
+            var products = _productService.GetAll();
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No products to delete.");
+                return;
+            }
+            foreach (var p in products)
+                Console.WriteLine($"  [{p.Id}] {p.Name}");
+            int id = InputHelper.ReadInt("Product ID to delete: ", products.Min(p => p.Id), products.Max(p => p.Id));
+            if (!InputHelper.ReadYesNo("Delete this product? (y/n): "))
+            {
+                Console.WriteLine("Cancelled.");
+                return;
+            }
+            if (_productService.Delete(id))
+                Console.WriteLine("Product deleted.");
+            else
+                Console.WriteLine("Product not found.");
         }
-        foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name}");
-        int id = InputHelper.ReadInt("Product ID to delete: ", products.Min(p => p.Id), products.Max(p => p.Id));
-        if (!InputHelper.ReadYesNo("Delete this product? (y/n): "))
+        catch (Exception)
         {
-            Console.WriteLine("Cancelled.");
-            return;
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
-        if (_productService.Delete(id))
-            Console.WriteLine("Product deleted.");
-        else
-            Console.WriteLine("Product not found.");
     }
 
     private void HandleRestockProduct()
     {
-        var products = _productService.GetAll();
-        if (products.Count == 0)
+        try
         {
-            Console.WriteLine("No products to restock.");
-            return;
-        }
-        foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name} (Stock: {p.StockQuantity})");
-        int id = InputHelper.ReadInt("Product ID to restock: ", products.Min(p => p.Id), products.Max(p => p.Id));
-        int quantity = InputHelper.ReadInt("Quantity to add: ", 1, 100000);
+            var products = _productService.GetAll();
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No products to restock.");
+                return;
+            }
+            foreach (var p in products)
+                Console.WriteLine($"  [{p.Id}] {p.Name} (Stock: {p.StockQuantity})");
+            int id = InputHelper.ReadInt("Product ID to restock: ", products.Min(p => p.Id), products.Max(p => p.Id));
+            int quantity = InputHelper.ReadInt("Quantity to add: ", 1, 100000);
 
-        if (_productService.Restock(id, quantity))
-            Console.WriteLine("Product restocked successfully.");
-        else
-            Console.WriteLine("Restock failed. Product not found.");
+            if (_productService.Restock(id, quantity))
+                Console.WriteLine("Product restocked successfully.");
+            else
+                Console.WriteLine("Restock failed. Product not found.");
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleViewProducts()
     {
-        var products = _productService.GetAll();
-        if (products.Count == 0)
+        try
         {
-            Console.WriteLine("No products.");
-            return;
+            var products = _productService.GetAll();
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No products.");
+                return;
+            }
+            foreach (var p in products)
+            {
+                var avg = _reviewService.GetAverageRating(p.Id);
+                var count = _reviewService.GetReviewCount(p.Id);
+                string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
+                Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+            }
         }
-        foreach (var p in products)
+        catch (Exception)
         {
-            var avg = _reviewService.GetAverageRating(p.Id);
-            var count = _reviewService.GetReviewCount(p.Id);
-            string ratingInfo = count == 0 ? "No reviews yet" : $"Rating: {avg:F1} ({count} review(s))";
-            Console.WriteLine($"  [{p.Id}] {p.Name} - ${p.Price:N2} (Stock: {p.StockQuantity}) - {ratingInfo}");
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 
     private void HandleViewLowStock()
     {
-        int threshold = InputHelper.ReadInt($"Low stock threshold (default {LowStockThresholdDefault}): ", 0, 10000);
-        var products = _productService.GetLowStock(threshold);
-        if (products.Count == 0)
+        try
         {
-            Console.WriteLine("No products at or below that threshold.");
-            return;
+            int threshold = InputHelper.ReadInt($"Low stock threshold (default {LowStockThresholdDefault}): ", 0, 10000);
+            var products = _productService.GetLowStock(threshold);
+            if (products.Count == 0)
+            {
+                Console.WriteLine("No products at or below that threshold.");
+                return;
+            }
+            foreach (var p in products)
+                Console.WriteLine($"  [{p.Id}] {p.Name} - Stock: {p.StockQuantity}");
         }
-        foreach (var p in products)
-            Console.WriteLine($"  [{p.Id}] {p.Name} - Stock: {p.StockQuantity}");
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleViewOrders()
     {
-        var orders = _orderService.GetAllOrders();
-        if (orders.Count == 0)
+        try
         {
-            Console.WriteLine("No orders.");
-            return;
+            var orders = _orderService.GetAllOrders();
+            if (orders.Count == 0)
+            {
+                Console.WriteLine("No orders.");
+                return;
+            }
+            foreach (var o in orders)
+                Console.WriteLine($"  Order #{o.Id} - Customer #{o.CustomerId} - ${o.TotalAmount:N2} - {o.Status} - {o.CreatedAt:yyyy-MM-dd HH:mm}");
         }
-        foreach (var o in orders)
-            Console.WriteLine($"  Order #{o.Id} - Customer #{o.CustomerId} - ${o.TotalAmount:N2} - {o.Status} - {o.CreatedAt:yyyy-MM-dd HH:mm}");
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleUpdateOrderStatus()
     {
-        var orders = _orderService.GetAllOrders();
-        if (orders.Count == 0)
+        try
         {
-            Console.WriteLine("No orders to update.");
-            return;
+            var orders = _orderService.GetAllOrders();
+            if (orders.Count == 0)
+            {
+                Console.WriteLine("No orders to update.");
+                return;
+            }
+            foreach (var o in orders)
+                Console.WriteLine($"  [{o.Id}] Customer #{o.CustomerId} - {o.Status} - ${o.TotalAmount:N2}");
+            int orderId = InputHelper.ReadInt("Order ID to update: ", orders.Min(o => o.Id), orders.Max(o => o.Id));
+            Console.WriteLine("1. Pending  2. Confirmed  3. Shipped  4. Delivered  5. Cancelled");
+            int statusChoice = InputHelper.ReadInt("New status (1-5): ", 1, 5);
+            var status = statusChoice switch
+            {
+                1 => OrderStatus.Pending,
+                2 => OrderStatus.Confirmed,
+                3 => OrderStatus.Shipped,
+                4 => OrderStatus.Delivered,
+                5 => OrderStatus.Cancelled,
+                _ => OrderStatus.Pending
+            };
+            if (_orderService.UpdateOrderStatus(orderId, status))
+                Console.WriteLine($"Order #{orderId} status updated to {status}.");
+            else
+                Console.WriteLine("Order not found.");
         }
-        foreach (var o in orders)
-            Console.WriteLine($"  [{o.Id}] Customer #{o.CustomerId} - {o.Status} - ${o.TotalAmount:N2}");
-        int orderId = InputHelper.ReadInt("Order ID to update: ", orders.Min(o => o.Id), orders.Max(o => o.Id));
-        Console.WriteLine("1. Pending  2. Confirmed  3. Shipped  4. Delivered  5. Cancelled");
-        int statusChoice = InputHelper.ReadInt("New status (1-5): ", 1, 5);
-        var status = statusChoice switch
+        catch (Exception)
         {
-            1 => OrderStatus.Pending,
-            2 => OrderStatus.Confirmed,
-            3 => OrderStatus.Shipped,
-            4 => OrderStatus.Delivered,
-            5 => OrderStatus.Cancelled,
-            _ => OrderStatus.Pending
-        };
-        if (_orderService.UpdateOrderStatus(orderId, status))
-            Console.WriteLine($"Order #{orderId} status updated to {status}.");
-        else
-            Console.WriteLine("Order not found.");
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void HandleGenerateReports()
     {
-        while (true)
+        try
         {
-            Console.WriteLine("\n--- Sales Reports ---");
-            Console.WriteLine("1. Sales Summary");
-            Console.WriteLine("2. Top Products");
-            Console.WriteLine("3. Revenue by Period");
-            Console.WriteLine("4. Back");
-
-            int choice = InputHelper.ReadInt("Select report: ", 1, 4);
-            if (choice == 4)
-                return;
-
-            switch (choice)
+            while (true)
             {
-                case 1:
-                    ShowSalesSummary();
-                    break;
-                case 2:
-                    ShowTopProducts();
-                    break;
-                case 3:
-                    ShowRevenueByPeriod();
-                    break;
-            }
+                Console.WriteLine("\n--- Sales Reports ---");
+                Console.WriteLine("1. Sales Summary");
+                Console.WriteLine("2. Top Products");
+                Console.WriteLine("3. Revenue by Period");
+                Console.WriteLine("4. Back");
 
-            InputHelper.WaitForAnyKey("Press any key to continue.");
+                int choice = InputHelper.ReadInt("Select report: ", 1, 4);
+                if (choice == 4)
+                    return;
+
+                switch (choice)
+                {
+                    case 1:
+                        ShowSalesSummary();
+                        break;
+                    case 2:
+                        ShowTopProducts();
+                        break;
+                    case 3:
+                        ShowRevenueByPeriod();
+                        break;
+                }
+
+                InputHelper.WaitForAnyKey("Press any key to continue.");
+            }
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
         }
     }
 
     private void ShowSalesSummary()
     {
-        DateTime? from = null;
-        DateTime? to = null;
-        string fromStr = InputHelper.ReadString("From date (yyyy-MM-dd, or leave empty for all time): ");
-        if (!string.IsNullOrWhiteSpace(fromStr) && DateTime.TryParse(fromStr, out var fromParsed))
-            from = fromParsed.Date;
-        string toStr = InputHelper.ReadString("To date (yyyy-MM-dd, or leave empty for all time): ");
-        if (!string.IsNullOrWhiteSpace(toStr) && DateTime.TryParse(toStr, out var toParsed))
-            to = toParsed.Date.AddDays(1).AddTicks(-1);
-
-        var (totalRevenue, orderCount, avgOrderValue) = _reportService.GetSalesSummary(from, to);
-        if (orderCount == 0)
+        try
         {
-            Console.WriteLine("No orders in the selected period.");
-            return;
+            DateTime? from = null;
+            DateTime? to = null;
+            string fromStr = InputHelper.ReadString("From date (yyyy-MM-dd, or leave empty for all time): ");
+            if (!string.IsNullOrWhiteSpace(fromStr) && DateTime.TryParse(fromStr, out var fromParsed))
+                from = fromParsed.Date;
+            string toStr = InputHelper.ReadString("To date (yyyy-MM-dd, or leave empty for all time): ");
+            if (!string.IsNullOrWhiteSpace(toStr) && DateTime.TryParse(toStr, out var toParsed))
+                to = toParsed.Date.AddDays(1).AddTicks(-1);
+
+            var (totalRevenue, orderCount, avgOrderValue) = _reportService.GetSalesSummary(from, to);
+            if (orderCount == 0)
+            {
+                Console.WriteLine("No orders in the selected period.");
+                return;
+            }
+            Console.WriteLine($"Total Revenue: ${totalRevenue:N2}");
+            Console.WriteLine($"Order Count: {orderCount}");
+            Console.WriteLine($"Average Order Value: ${avgOrderValue:N2}");
         }
-        Console.WriteLine($"Total Revenue: ${totalRevenue:N2}");
-        Console.WriteLine($"Order Count: {orderCount}");
-        Console.WriteLine($"Average Order Value: ${avgOrderValue:N2}");
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void ShowTopProducts()
     {
-        int limit = InputHelper.ReadInt("Number of top products (1-50): ", 1, 50);
-        var top = _reportService.GetTopProducts(limit);
-        if (top.Count == 0)
+        try
         {
-            Console.WriteLine("No sales data.");
-            return;
+            int limit = InputHelper.ReadInt("Number of top products (1-50): ", 1, 50);
+            var top = _reportService.GetTopProducts(limit);
+            if (top.Count == 0)
+            {
+                Console.WriteLine("No sales data.");
+                return;
+            }
+            Console.WriteLine($"Top {top.Count} products by quantity sold:");
+            foreach (var (productId, productName, quantitySold, revenue) in top)
+                Console.WriteLine($"  {productName} (ID {productId}): {quantitySold} sold - ${revenue:N2}");
         }
-        Console.WriteLine($"Top {top.Count} products by quantity sold:");
-        foreach (var (productId, productName, quantitySold, revenue) in top)
-            Console.WriteLine($"  {productName} (ID {productId}): {quantitySold} sold - ${revenue:N2}");
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 
     private void ShowRevenueByPeriod()
     {
-        Console.WriteLine("1. By Day  2. By Week  3. By Month");
-        int periodChoice = InputHelper.ReadInt("Select period: ", 1, 3);
-        string period = periodChoice switch { 1 => "day", 2 => "week", 3 => "month", _ => "day" };
-
-        var rows = _reportService.GetRevenueByPeriod(period);
-        if (rows.Count == 0)
+        try
         {
-            Console.WriteLine("No orders in the selected period.");
-            return;
+            Console.WriteLine("1. By Day  2. By Week  3. By Month");
+            int periodChoice = InputHelper.ReadInt("Select period: ", 1, 3);
+            string period = periodChoice switch { 1 => "day", 2 => "week", 3 => "month", _ => "day" };
+
+            var rows = _reportService.GetRevenueByPeriod(period);
+            if (rows.Count == 0)
+            {
+                Console.WriteLine("No orders in the selected period.");
+                return;
+            }
+            Console.WriteLine($"Revenue by {period}:");
+            foreach (var (periodLabel, revenue, orderCount) in rows)
+                Console.WriteLine($"  {periodLabel}: ${revenue:N2} ({orderCount} order(s))");
         }
-        Console.WriteLine($"Revenue by {period}:");
-        foreach (var (periodLabel, revenue, orderCount) in rows)
-            Console.WriteLine($"  {periodLabel}: ${revenue:N2} ({orderCount} order(s))");
+        catch (Exception)
+        {
+            Console.WriteLine("An unexpected error occurred. Please try again.");
+        }
     }
 }
