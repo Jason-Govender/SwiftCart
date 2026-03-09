@@ -117,6 +117,22 @@ All data is persisted to JSON files in the application output directory:
 |---------|---------|---------|
 | [Newtonsoft.Json](https://www.newtonsoft.com/json) | 13.0.3 | JSON serialisation with polymorphic type support |
 
+## Testing
+
+Unit tests live in the `SwiftCart.Tests` project (xUnit + Moq). Run all tests from the repository root:
+
+```bash
+dotnet test
+```
+
+Or target the test project explicitly:
+
+```bash
+dotnet test --project SwiftCart.Tests
+```
+
+Tests cover: order state machine and valid/invalid status transitions, `UserFactory` (Customer/Administrator creation and invalid role), `AuthService` (registration validation and login with mocked `IUserRepository`), and `OrderService.UpdateOrderStatus` (order not found, valid transition, invalid transition with terminal state message).
+
 ## Menu Structure
 
 ```
