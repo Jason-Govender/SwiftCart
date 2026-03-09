@@ -9,15 +9,13 @@ public class OrderService : IOrderService
 {
     private readonly AppDb _db;
     private readonly ICartService _cartService;
-    private readonly IWalletService _walletService;
     private readonly IProductService _productService;
     private readonly List<IOrderObserver> _observers = new();
 
-    public OrderService(AppDb db, ICartService cartService, IWalletService walletService, IProductService productService)
+    public OrderService(AppDb db, ICartService cartService, IProductService productService)
     {
         _db = db;
         _cartService = cartService;
-        _walletService = walletService;
         _productService = productService;
     }
 
@@ -33,10 +31,10 @@ public class OrderService : IOrderService
     }
 
     /// <summary>
-    /// Places an order from the customer's cart. Returns (true, order, null) on success,
-    /// or (false, null, errorMessage) on failure.
+    /// Places an order from the customer's cart using the supplied payment strategy.
+    /// Returns (true, order, null) on success, or (false, null, errorMessage) on failure.
     /// </summary>
-    public (bool Success, Order? Order, string? ErrorMessage) PlaceOrder(int customerId)
+    public (bool Success, Order? Order, string? ErrorMessage) PlaceOrder(int customerId, IPaymentStrategy paymentStrategy)
     {
         try
         {
@@ -55,11 +53,9 @@ public class OrderService : IOrderService
                 total += item.Quantity * item.UnitPrice;
             }
 
-            if (_walletService.GetBalance(customerId) < total)
-                return (false, null, "Insufficient wallet balance.");
-
-            if (!_walletService.DeductFunds(customerId, total))
-                return (false, null, "Failed to deduct funds from wallet.");
+            var (paySuccess, payError) = paymentStrategy.Pay(customerId, total);
+            if (!paySuccess)
+                return (false, null, payError ?? "Payment failed.");
 
             int orderId = GetNextOrderId();
             var order = new Order
@@ -85,7 +81,7 @@ public class OrderService : IOrderService
                 });
                 if (!_productService.DeductStock(item.ProductId, item.Quantity))
                 {
-                    _walletService.AddFunds(customerId, total);
+                    paymentStrategy.Refund(customerId, total);
                     return (false, null, "Failed to reserve stock. Please try again.");
                 }
             }
@@ -98,7 +94,7 @@ public class OrderService : IOrderService
                 OrderId = order.Id,
                 CustomerId = customerId,
                 Amount = total,
-                Method = "Wallet",
+                Method = paymentStrategy.MethodName,
                 PaidAt = DateTime.UtcNow
             });
 

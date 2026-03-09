@@ -1,5 +1,6 @@
 using SwiftCart.Application.Helpers;
 using SwiftCart.Application.Interfaces;
+using SwiftCart.Application.PaymentStrategies;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Infrastructure.Data;
 
@@ -264,9 +265,21 @@ public class CustomerMenu
     {
         try
         {
-            var (success, order, errorMessage) = _orderService.PlaceOrder(user.Id);
+            Console.WriteLine("Select payment method:");
+            Console.WriteLine("1. Wallet");
+            Console.WriteLine("2. Cash on Delivery");
+            int methodChoice = InputHelper.ReadInt("Payment method: ", 1, 2);
+
+            IPaymentStrategy paymentStrategy = methodChoice switch
+            {
+                1 => new WalletPaymentStrategy(_walletService),
+                2 => new CashOnDeliveryPaymentStrategy(),
+                _ => new WalletPaymentStrategy(_walletService)
+            };
+
+            var (success, order, errorMessage) = _orderService.PlaceOrder(user.Id, paymentStrategy);
             if (success && order != null)
-                Console.WriteLine($"Order placed successfully. Order #{order.Id} - Total: ${order.TotalAmount:N2}");
+                Console.WriteLine($"Order placed successfully. Order #{order.Id} - Total: ${order.TotalAmount:N2} - Payment: {paymentStrategy.MethodName}");
             else
                 Console.WriteLine($"Checkout failed: {errorMessage ?? "Unknown error."}");
         }

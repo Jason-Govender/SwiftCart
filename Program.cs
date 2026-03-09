@@ -12,7 +12,7 @@ AuthService authService = new AuthService(db, userFactory);
 ProductService productService = new ProductService(db);
 CartService cartService = new CartService(db);
 WalletService walletService = new WalletService(db);
-OrderService orderService = new OrderService(db, cartService, walletService, productService);
+OrderService orderService = new OrderService(db, cartService, productService);
 OrderNotificationObserver notificationObserver = new OrderNotificationObserver(db);
 orderService.Subscribe(notificationObserver);
 ReviewService reviewService = new ReviewService(db, productService);
