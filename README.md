@@ -31,7 +31,8 @@ SwiftCart/
 │   ├── Entities/        # User, Customer, Administrator, Product, Cart,
 │   │                    # CartItem, Order, OrderItem, Payment, Review, Wallet, Notification
 │   ├── Enums/           # UserRole, OrderStatus
-│   └── Factories/       # IUserFactory, UserFactory (user creation by role)
+│   ├── Factories/       # IUserFactory, UserFactory (user creation by role)
+│   └── OrderState/      # IOrderState, OrderStateMachine, state classes (Pending, Confirmed, Shipped, Delivered, Cancelled)
 ├── Application/
 │   ├── Interfaces/     # Service + repository + strategy + observer interfaces
 │   ├── Services/        # Concrete service implementations
@@ -55,6 +56,7 @@ SwiftCart/
 - **Observer** — `IOrderObserver` and `OrderNotificationObserver` in `Application/`. When an order is placed or its status changes, `OrderService` notifies all subscribed observers without knowing what they do. The notification observer writes to `AppDb.Notifications`; customers see these via **View Notifications**. New reactions (e.g. audit log, email) can be added by implementing the interface and subscribing — no change to `OrderService`.
 - **Strategy** — `IPaymentStrategy` and implementations (`WalletPaymentStrategy`, `CashOnDeliveryPaymentStrategy`) in `Application/PaymentStrategies/`. Checkout delegates payment to the selected strategy (`Pay` / `Refund`). `OrderService` has no wallet-specific logic; new payment methods are added by implementing the interface and choosing the strategy at checkout (Open/Closed Principle).
 - **Repository** — Seven repository interfaces in `Application/Interfaces/` and implementations in `Infrastructure/Repositories/` (User, Product, Cart, Order, Payment, Wallet, Review). Services depend only on repository interfaces, not on `AppDb`. Data access and ID generation live in one place; swapping storage would require changing only the repository layer.
+- **State** — `IOrderState` and `OrderStateMachine` in `Domain/OrderState/`, with concrete states for each `OrderStatus` (Pending, Confirmed, Shipped, Delivered, Cancelled). When an administrator updates an order’s status, `OrderService` uses the state machine to allow only valid transitions (`CanTransitionTo`). Invalid transitions are rejected with a clear message; adding or changing allowed transitions is done by adjusting the state classes.
 
 ### Key Design Decisions
 
