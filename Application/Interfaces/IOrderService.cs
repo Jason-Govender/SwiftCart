@@ -9,5 +9,5 @@ public interface IOrderService
     List<Order> GetOrdersByCustomer(int customerId);
     Order? GetOrderById(int orderId);
     List<Order> GetAllOrders();
-    bool UpdateOrderStatus(int orderId, OrderStatus status);
+    (bool Success, string? ErrorMessage) UpdateOrderStatus(int orderId, OrderStatus status);
 }
