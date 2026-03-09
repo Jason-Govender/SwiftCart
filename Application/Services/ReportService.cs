@@ -2,17 +2,18 @@ using System.Globalization;
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
-using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
 public class ReportService : IReportService
 {
-    private readonly AppDb _db;
+    private readonly IOrderRepository _orderRepo;
+    private readonly IProductRepository _productRepo;
 
-    public ReportService(AppDb db)
+    public ReportService(IOrderRepository orderRepo, IProductRepository productRepo)
     {
-        _db = db;
+        _orderRepo = orderRepo;
+        _productRepo = productRepo;
     }
 
     /// <summary>
@@ -21,9 +22,7 @@ public class ReportService : IReportService
     /// </summary>
     public (decimal TotalRevenue, int OrderCount, decimal AverageOrderValue) GetSalesSummary(DateTime? from, DateTime? to)
     {
-        var orders = _db.Orders
-            .Where(o => o.Status != OrderStatus.Cancelled)
-            .AsEnumerable();
+        var orders = _orderRepo.GetNonCancelled().AsEnumerable();
 
         if (from.HasValue)
             orders = orders.Where(o => o.CreatedAt >= from.Value);
@@ -46,13 +45,10 @@ public class ReportService : IReportService
     /// </summary>
     public List<(int ProductId, string ProductName, int QuantitySold, decimal Revenue)> GetTopProducts(int limit)
     {
-        var validOrderIds = _db.Orders
-            .Where(o => o.Status != OrderStatus.Cancelled)
-            .Select(o => o.Id)
-            .ToHashSet();
+        var nonCancelled = _orderRepo.GetNonCancelled();
 
-        var productTotals = _db.Orders
-            .Where(o => validOrderIds.Contains(o.Id) && o.Items != null)
+        var productTotals = nonCancelled
+            .Where(o => o.Items != null)
             .SelectMany(o => o.Items)
             .GroupBy(i => i.ProductId)
             .Select(g => new
@@ -65,7 +61,7 @@ public class ReportService : IReportService
             .Take(limit)
             .ToList();
 
-        var productsById = _db.Products.ToDictionary(p => p.Id);
+        var productsById = _productRepo.GetAll().ToDictionary(p => p.Id);
 
         return productTotals
             .Select(x => (
@@ -82,9 +78,7 @@ public class ReportService : IReportService
     /// </summary>
     public List<(string PeriodLabel, decimal Revenue, int OrderCount)> GetRevenueByPeriod(string period)
     {
-        var orders = _db.Orders
-            .Where(o => o.Status != OrderStatus.Cancelled)
-            .ToList();
+        var orders = _orderRepo.GetNonCancelled();
 
         if (orders.Count == 0)
             return new List<(string, decimal, int)>();

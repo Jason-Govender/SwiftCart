@@ -3,20 +3,31 @@ using SwiftCart.Application.Services;
 using SwiftCart.Domain.Factories;
 using SwiftCart.Infrastructure.Data;
 using SwiftCart.Infrastructure.Persistence;
+using SwiftCart.Infrastructure.Repositories;
 using SwiftCart.Presentation.Menus;
 
 AppDb db = new AppDb();
 JsonDataStore jsonDataStore = new JsonDataStore();
 UserFactory userFactory = new UserFactory();
-AuthService authService = new AuthService(db, userFactory);
-ProductService productService = new ProductService(db);
-CartService cartService = new CartService(db);
-WalletService walletService = new WalletService(db);
-OrderService orderService = new OrderService(db, cartService, productService);
+
+UserRepository userRepo = new UserRepository(db);
+ProductRepository productRepo = new ProductRepository(db);
+CartRepository cartRepo = new CartRepository(db);
+OrderRepository orderRepo = new OrderRepository(db);
+PaymentRepository paymentRepo = new PaymentRepository(db);
+WalletRepository walletRepo = new WalletRepository(db);
+ReviewRepository reviewRepo = new ReviewRepository(db);
+
+AuthService authService = new AuthService(userRepo, userFactory);
+ProductService productService = new ProductService(productRepo);
+CartService cartService = new CartService(cartRepo, productRepo);
+WalletService walletService = new WalletService(walletRepo);
+OrderService orderService = new OrderService(orderRepo, paymentRepo, cartService, productService);
 OrderNotificationObserver notificationObserver = new OrderNotificationObserver(db);
 orderService.Subscribe(notificationObserver);
-ReviewService reviewService = new ReviewService(db, productService);
-ReportService reportService = new ReportService(db);
+ReviewService reviewService = new ReviewService(reviewRepo, productService);
+ReportService reportService = new ReportService(orderRepo, productRepo);
+
 Action saveAll = () =>
 {
     jsonDataStore.SaveUsers(db);

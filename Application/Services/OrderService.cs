@@ -1,20 +1,21 @@
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
-using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
 public class OrderService : IOrderService
 {
-    private readonly AppDb _db;
+    private readonly IOrderRepository _orderRepo;
+    private readonly IPaymentRepository _paymentRepo;
     private readonly ICartService _cartService;
     private readonly IProductService _productService;
     private readonly List<IOrderObserver> _observers = new();
 
-    public OrderService(AppDb db, ICartService cartService, IProductService productService)
+    public OrderService(IOrderRepository orderRepo, IPaymentRepository paymentRepo, ICartService cartService, IProductService productService)
     {
-        _db = db;
+        _orderRepo = orderRepo;
+        _paymentRepo = paymentRepo;
         _cartService = cartService;
         _productService = productService;
     }
@@ -57,10 +58,9 @@ public class OrderService : IOrderService
             if (!paySuccess)
                 return (false, null, payError ?? "Payment failed.");
 
-            int orderId = GetNextOrderId();
             var order = new Order
             {
-                Id = orderId,
+                Id = _orderRepo.GetNextId(),
                 CustomerId = customerId,
                 TotalAmount = total,
                 Status = OrderStatus.Pending,
@@ -68,7 +68,7 @@ public class OrderService : IOrderService
                 Items = new List<OrderItem>()
             };
 
-            int orderItemId = GetNextOrderItemId();
+            int orderItemId = _orderRepo.GetNextItemId();
             foreach (var item in cart.Items)
             {
                 order.Items.Add(new OrderItem
@@ -86,11 +86,11 @@ public class OrderService : IOrderService
                 }
             }
 
-            _db.Orders.Add(order);
+            _orderRepo.Add(order);
 
-            _db.Payments.Add(new Payment
+            _paymentRepo.Add(new Payment
             {
-                Id = GetNextPaymentId(),
+                Id = _paymentRepo.GetNextId(),
                 OrderId = order.Id,
                 CustomerId = customerId,
                 Amount = total,
@@ -108,27 +108,18 @@ public class OrderService : IOrderService
         }
     }
 
-    public List<Order> GetOrdersByCustomer(int customerId)
-    {
-        return _db.Orders
-            .Where(o => o.CustomerId == customerId)
-            .OrderByDescending(o => o.CreatedAt)
-            .ToList();
-    }
+    public List<Order> GetOrdersByCustomer(int customerId) =>
+        _orderRepo.GetByCustomer(customerId);
 
-    public Order? GetOrderById(int orderId)
-    {
-        return _db.Orders.FirstOrDefault(o => o.Id == orderId);
-    }
+    public Order? GetOrderById(int orderId) =>
+        _orderRepo.GetById(orderId);
 
-    public List<Order> GetAllOrders()
-    {
-        return _db.Orders.OrderByDescending(o => o.CreatedAt).ToList();
-    }
+    public List<Order> GetAllOrders() =>
+        _orderRepo.GetAll();
 
     public bool UpdateOrderStatus(int orderId, OrderStatus status)
     {
-        var order = _db.Orders.FirstOrDefault(o => o.Id == orderId);
+        var order = _orderRepo.GetById(orderId);
         if (order == null)
             return false;
         var previousStatus = order.Status;
@@ -147,32 +138,5 @@ public class OrderService : IOrderService
     {
         foreach (var observer in _observers)
             observer.OnOrderStatusChanged(order, previousStatus);
-    }
-
-    private int GetNextOrderId()
-    {
-        if (_db.Orders == null || _db.Orders.Count == 0)
-            return 1;
-        return _db.Orders.Max(o => o.Id) + 1;
-    }
-
-    private int GetNextPaymentId()
-    {
-        if (_db.Payments == null || _db.Payments.Count == 0)
-            return 1;
-        return _db.Payments.Max(p => p.Id) + 1;
-    }
-
-    private int GetNextOrderItemId()
-    {
-        if (_db.Orders == null || _db.Orders.Count == 0)
-            return 1;
-        int max = _db.Orders
-            .Where(o => o.Items != null)
-            .SelectMany(o => o.Items)
-            .Select(i => i.Id)
-            .DefaultIfEmpty(0)
-            .Max();
-        return max + 1;
     }
 }

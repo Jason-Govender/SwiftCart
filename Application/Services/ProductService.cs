@@ -1,43 +1,30 @@
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
-using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
 public class ProductService : IProductService
 {
-    private readonly AppDb _db;
+    private readonly IProductRepository _productRepo;
 
-    public ProductService(AppDb db)
+    public ProductService(IProductRepository productRepo)
     {
-        _db = db;
+        _productRepo = productRepo;
     }
 
-    public List<Product> GetAll()
-    {
-        return _db.Products.ToList();
-    }
+    public List<Product> GetAll() => _productRepo.GetAll();
 
-    public Product? GetById(int id)
-    {
-        return _db.Products.FirstOrDefault(p => p.Id == id);
-    }
+    public Product? GetById(int id) => _productRepo.GetById(id);
 
     public List<Product> Search(string term)
     {
         if (string.IsNullOrWhiteSpace(term))
             return new List<Product>();
 
-        string lower = term.Trim().ToLowerInvariant();
-        return _db.Products
-            .Where(p => (p.Name + " " + p.Description).ToLowerInvariant().Contains(lower))
-            .ToList();
+        return _productRepo.Search(term);
     }
 
-    public List<Product> GetLowStock(int threshold)
-    {
-        return _db.Products.Where(p => p.StockQuantity <= threshold).ToList();
-    }
+    public List<Product> GetLowStock(int threshold) => _productRepo.GetLowStock(threshold);
 
     public bool Add(string name, string description, decimal price, int stock)
     {
@@ -48,10 +35,9 @@ public class ProductService : IProductService
         if (stock < 0)
             return false;
 
-        int nextId = _db.Products.Count > 0 ? _db.Products.Max(p => p.Id) + 1 : 1;
-        _db.Products.Add(new Product
+        _productRepo.Add(new Product
         {
-            Id = nextId,
+            Id = _productRepo.GetNextId(),
             Name = name.Trim(),
             Description = description?.Trim() ?? string.Empty,
             Price = price,
@@ -82,7 +68,7 @@ public class ProductService : IProductService
         if (product == null)
             return false;
 
-        _db.Products.Remove(product);
+        _productRepo.Remove(product);
         return true;
     }
 
