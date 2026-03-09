@@ -1,20 +1,17 @@
 using SwiftCart.Domain.Entities;
+using SwiftCart.Domain.Enums;
+using SwiftCart.Domain.Factories;
 
 namespace SwiftCart.Infrastructure.Data;
 
 public static class SeedData
 {
-    public static void SeedUsersIfEmpty(AppDb db)
+    public static void SeedUsersIfEmpty(AppDb db, IUserFactory userFactory)
     {
         if (db.Users.Count > 0)
             return;
 
-        db.Users.Add(new Administrator
-        {
-            Id = 1,
-            Username = "admin",
-            Password = "admin"
-        });
+        db.Users.Add(userFactory.Create(UserRole.Administrator, 1, "admin", "admin"));
     }
 
     public static void SeedProductsIfEmpty(AppDb db)

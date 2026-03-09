@@ -5,9 +5,9 @@ namespace SwiftCart.Application.Interfaces;
 
 public interface IOrderService
 {
-    (bool Success, Order? Order, string? ErrorMessage) PlaceOrder(int customerId);
+    (bool Success, Order? Order, string? ErrorMessage) PlaceOrder(int customerId, IPaymentStrategy paymentStrategy);
     List<Order> GetOrdersByCustomer(int customerId);
     Order? GetOrderById(int orderId);
     List<Order> GetAllOrders();
-    bool UpdateOrderStatus(int orderId, OrderStatus status);
+    (bool Success, string? ErrorMessage) UpdateOrderStatus(int orderId, OrderStatus status);
 }

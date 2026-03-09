@@ -1,37 +1,36 @@
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
-using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
 public class WalletService : IWalletService
 {
-    private readonly AppDb _db;
+    private readonly IWalletRepository _walletRepo;
 
-    public WalletService(AppDb db)
+    public WalletService(IWalletRepository walletRepo)
     {
-        _db = db;
+        _walletRepo = walletRepo;
     }
 
     public Wallet GetOrCreateWallet(int customerId)
     {
-        var wallet = _db.Wallets.FirstOrDefault(w => w.CustomerId == customerId);
+        var wallet = _walletRepo.GetByCustomerId(customerId);
         if (wallet != null)
             return wallet;
 
         wallet = new Wallet
         {
-            Id = GetNextWalletId(),
+            Id = _walletRepo.GetNextId(),
             CustomerId = customerId,
             Balance = 0
         };
-        _db.Wallets.Add(wallet);
+        _walletRepo.Add(wallet);
         return wallet;
     }
 
     public decimal GetBalance(int customerId)
     {
-        var wallet = _db.Wallets.FirstOrDefault(w => w.CustomerId == customerId);
+        var wallet = _walletRepo.GetByCustomerId(customerId);
         return wallet?.Balance ?? 0;
     }
 
@@ -50,20 +49,11 @@ public class WalletService : IWalletService
         if (amount <= 0)
             return false;
 
-        var wallet = _db.Wallets.FirstOrDefault(w => w.CustomerId == customerId);
+        var wallet = _walletRepo.GetByCustomerId(customerId);
         if (wallet == null || wallet.Balance < amount)
             return false;
 
         wallet.Balance -= amount;
         return true;
     }
-
-    private static int GetNextWalletId(AppDb db)
-    {
-        if (db.Wallets == null || db.Wallets.Count == 0)
-            return 1;
-        return db.Wallets.Max(w => w.Id) + 1;
-    }
-
-    private int GetNextWalletId() => GetNextWalletId(_db);
 }

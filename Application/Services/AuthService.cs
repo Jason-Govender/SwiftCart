@@ -1,19 +1,22 @@
 using SwiftCart.Application.Enums;
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
-using SwiftCart.Infrastructure.Data;
+using SwiftCart.Domain.Enums;
+using SwiftCart.Domain.Factories;
 
 namespace SwiftCart.Application.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly AppDb _db;
+    private readonly IUserRepository _userRepo;
+    private readonly IUserFactory _userFactory;
 
     public User? CurrentUser { get; private set; }
 
-    public AuthService(AppDb db)
+    public AuthService(IUserRepository userRepo, IUserFactory userFactory)
     {
-        _db = db;
+        _userRepo = userRepo;
+        _userFactory = userFactory;
     }
 
     public RegistrationResult Register(string username, string password)
@@ -24,17 +27,12 @@ public class AuthService : IAuthService
         if (!MeetsPasswordStrength(password))
             return RegistrationResult.WeakPassword;
 
-        if (_db.Users.Any(u => u.Username.Equals(username.Trim(), StringComparison.OrdinalIgnoreCase)))
+        if (_userRepo.ExistsWithUsername(username.Trim()))
             return RegistrationResult.DuplicateUsername;
 
-        int nextId = _db.Users.Count > 0 ? _db.Users.Max(u => u.Id) + 1 : 1;
-        Customer customer = new Customer
-        {
-            Id = nextId,
-            Username = username.Trim(),
-            Password = password
-        };
-        _db.Users.Add(customer);
+        int nextId = _userRepo.GetNextId();
+        User customer = _userFactory.Create(UserRole.Customer, nextId, username.Trim(), password);
+        _userRepo.Add(customer);
         return RegistrationResult.Success;
     }
 
@@ -46,8 +44,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        User? user = _db.Users.FirstOrDefault(u =>
-            u.Username.Equals(username.Trim(), StringComparison.OrdinalIgnoreCase) && u.Password == password);
+        User? user = _userRepo.FindByCredentials(username.Trim(), password);
         CurrentUser = user;
         return user;
     }
