@@ -45,7 +45,17 @@ public class CustomerMenu
             Console.WriteLine("9.  View Order History");
             Console.WriteLine("10. Track Orders");
             Console.WriteLine("11. Review Products");
-            Console.WriteLine("12. View Notifications");
+            int unreadCount = _db.Notifications.Count(n => n.CustomerId == user.Id && !n.IsRead);
+            if (unreadCount > 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"12. View Notifications ({unreadCount} unread)");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.WriteLine("12. View Notifications");
+            }
             Console.WriteLine("13. Logout");
 
             int choice = InputHelper.ReadInt("Select option: ", 1, 13);
