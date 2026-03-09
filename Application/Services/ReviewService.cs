@@ -1,15 +1,16 @@
+using SwiftCart.Application.Interfaces;
 using SwiftCart.Common.Constants;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
-public class ReviewService
+public class ReviewService : IReviewService
 {
     private readonly AppDb _db;
-    private readonly ProductService _productService;
+    private readonly IProductService _productService;
 
-    public ReviewService(AppDb db, ProductService productService)
+    public ReviewService(AppDb db, IProductService productService)
     {
         _db = db;
         _productService = productService;

@@ -10,4 +10,5 @@ public class AppDb
     public List<Wallet> Wallets { get; } = new();
     public List<Order> Orders { get; } = new();
     public List<Review> Reviews { get; } = new();
+    public List<Payment> Payments { get; } = new();
 }

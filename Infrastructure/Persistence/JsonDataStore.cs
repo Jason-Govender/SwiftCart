@@ -18,6 +18,7 @@ public class JsonDataStore
     private readonly string _walletsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wallets.json");
     private readonly string _ordersPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "orders.json");
     private readonly string _reviewsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "reviews.json");
+    private readonly string _paymentsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "payments.json");
 
     public void LoadUsers(AppDb db)
     {
@@ -137,5 +138,25 @@ public class JsonDataStore
     {
         var json = JsonConvert.SerializeObject(db.Reviews, Settings);
         File.WriteAllText(_reviewsPath, json);
+    }
+
+    public void LoadPayments(AppDb db)
+    {
+        if (!File.Exists(_paymentsPath))
+            return;
+
+        var json = File.ReadAllText(_paymentsPath);
+        var payments = JsonConvert.DeserializeObject<List<Payment>>(json, Settings);
+        if (payments != null)
+        {
+            db.Payments.Clear();
+            db.Payments.AddRange(payments);
+        }
+    }
+
+    public void SavePayments(AppDb db)
+    {
+        var json = JsonConvert.SerializeObject(db.Payments, Settings);
+        File.WriteAllText(_paymentsPath, json);
     }
 }
