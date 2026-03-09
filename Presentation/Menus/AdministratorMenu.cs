@@ -280,10 +280,11 @@ public class AdministratorMenu
                 5 => OrderStatus.Cancelled,
                 _ => OrderStatus.Pending
             };
-            if (_orderService.UpdateOrderStatus(orderId, status))
+            var (success, errorMessage) = _orderService.UpdateOrderStatus(orderId, status);
+            if (success)
                 Console.WriteLine($"Order #{orderId} status updated to {status}.");
             else
-                Console.WriteLine("Order not found.");
+                Console.WriteLine(errorMessage ?? "Order not found.");
         }
         catch (Exception)
         {

@@ -1,6 +1,7 @@
 using SwiftCart.Application.Observers;
 using SwiftCart.Application.Services;
 using SwiftCart.Domain.Factories;
+using SwiftCart.Domain.OrderState;
 using SwiftCart.Infrastructure.Data;
 using SwiftCart.Infrastructure.Persistence;
 using SwiftCart.Infrastructure.Repositories;
@@ -22,7 +23,8 @@ AuthService authService = new AuthService(userRepo, userFactory);
 ProductService productService = new ProductService(productRepo);
 CartService cartService = new CartService(cartRepo, productRepo);
 WalletService walletService = new WalletService(walletRepo);
-OrderService orderService = new OrderService(orderRepo, paymentRepo, cartService, productService);
+OrderStateMachine orderStateMachine = new OrderStateMachine();
+OrderService orderService = new OrderService(orderRepo, paymentRepo, cartService, productService, orderStateMachine);
 OrderNotificationObserver notificationObserver = new OrderNotificationObserver(db);
 orderService.Subscribe(notificationObserver);
 ReviewService reviewService = new ReviewService(reviewRepo, productService);

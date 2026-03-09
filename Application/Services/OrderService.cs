@@ -1,6 +1,7 @@
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
+using SwiftCart.Domain.OrderState;
 
 namespace SwiftCart.Application.Services;
 
@@ -10,14 +11,16 @@ public class OrderService : IOrderService
     private readonly IPaymentRepository _paymentRepo;
     private readonly ICartService _cartService;
     private readonly IProductService _productService;
+    private readonly OrderStateMachine _stateMachine;
     private readonly List<IOrderObserver> _observers = new();
 
-    public OrderService(IOrderRepository orderRepo, IPaymentRepository paymentRepo, ICartService cartService, IProductService productService)
+    public OrderService(IOrderRepository orderRepo, IPaymentRepository paymentRepo, ICartService cartService, IProductService productService, OrderStateMachine stateMachine)
     {
         _orderRepo = orderRepo;
         _paymentRepo = paymentRepo;
         _cartService = cartService;
         _productService = productService;
+        _stateMachine = stateMachine;
     }
 
     public void Subscribe(IOrderObserver observer)
@@ -117,15 +120,26 @@ public class OrderService : IOrderService
     public List<Order> GetAllOrders() =>
         _orderRepo.GetAll();
 
-    public bool UpdateOrderStatus(int orderId, OrderStatus status)
+    public (bool Success, string? ErrorMessage) UpdateOrderStatus(int orderId, OrderStatus status)
     {
         var order = _orderRepo.GetById(orderId);
         if (order == null)
-            return false;
+            return (false, "Order not found.");
+
+        var currentState = _stateMachine.GetState(order.Status);
+        if (!currentState.CanTransitionTo(status))
+        {
+            var allowed = currentState.GetAllowedTransitions();
+            var allowedStr = allowed.Count == 0
+                ? "none (terminal state)"
+                : string.Join(", ", allowed);
+            return (false, $"Cannot transition from {order.Status} to {status}. Allowed: {allowedStr}.");
+        }
+
         var previousStatus = order.Status;
         order.Status = status;
         NotifyOrderStatusChanged(order, previousStatus);
-        return true;
+        return (true, null);
     }
 
     private void NotifyOrderPlaced(Order order)
