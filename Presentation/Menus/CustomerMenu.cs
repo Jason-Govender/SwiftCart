@@ -12,8 +12,9 @@ public class CustomerMenu
     private readonly IWalletService _walletService;
     private readonly IOrderService _orderService;
     private readonly IReviewService _reviewService;
+    private readonly Action _saveAll;
 
-    public CustomerMenu(IAuthService authService, IProductService productService, ICartService cartService, IWalletService walletService, IOrderService orderService, IReviewService reviewService)
+    public CustomerMenu(IAuthService authService, IProductService productService, ICartService cartService, IWalletService walletService, IOrderService orderService, IReviewService reviewService, Action saveAll)
     {
         _authService = authService;
         _productService = productService;
@@ -21,6 +22,7 @@ public class CustomerMenu
         _walletService = walletService;
         _orderService = orderService;
         _reviewService = reviewService;
+        _saveAll = saveAll;
     }
 
     public void Run(Customer user)
@@ -91,6 +93,7 @@ public class CustomerMenu
                     break;
             }
 
+            _saveAll();
             InputHelper.WaitForAnyKey("Press any key to return to menu.");
         }
     }

@@ -10,12 +10,14 @@ public class MainMenu
     private readonly IAuthService _authService;
     private readonly CustomerMenu _customerMenu;
     private readonly AdministratorMenu _administratorMenu;
+    private readonly Action _saveAll;
 
-    public MainMenu(IAuthService authService, CustomerMenu customerMenu, AdministratorMenu administratorMenu)
+    public MainMenu(IAuthService authService, CustomerMenu customerMenu, AdministratorMenu administratorMenu, Action saveAll)
     {
         _authService = authService;
         _customerMenu = customerMenu;
         _administratorMenu = administratorMenu;
+        _saveAll = saveAll;
     }
 
     public void Run()
@@ -33,9 +35,11 @@ public class MainMenu
             {
                 case 1:
                     HandleRegister();
+                    _saveAll();
                     break;
                 case 2:
                     HandleLogin();
+                    _saveAll();
                     break;
                 case 3:
                     Console.WriteLine("Goodbye!");

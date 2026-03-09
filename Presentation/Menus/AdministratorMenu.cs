@@ -13,14 +13,16 @@ public class AdministratorMenu
     private readonly IOrderService _orderService;
     private readonly IReviewService _reviewService;
     private readonly IReportService _reportService;
+    private readonly Action _saveAll;
 
-    public AdministratorMenu(IAuthService authService, IProductService productService, IOrderService orderService, IReviewService reviewService, IReportService reportService)
+    public AdministratorMenu(IAuthService authService, IProductService productService, IOrderService orderService, IReviewService reviewService, IReportService reportService, Action saveAll)
     {
         _authService = authService;
         _productService = productService;
         _orderService = orderService;
         _reviewService = reviewService;
         _reportService = reportService;
+        _saveAll = saveAll;
     }
 
     public void Run(Administrator user)
@@ -83,6 +85,7 @@ public class AdministratorMenu
                     break;
             }
 
+            _saveAll();
             InputHelper.WaitForAnyKey("Press any key to return to menu.");
         }
     }
