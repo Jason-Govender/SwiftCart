@@ -1,18 +1,17 @@
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Common.Constants;
 using SwiftCart.Domain.Entities;
-using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
 public class ReviewService : IReviewService
 {
-    private readonly AppDb _db;
+    private readonly IReviewRepository _reviewRepo;
     private readonly IProductService _productService;
 
-    public ReviewService(AppDb db, IProductService productService)
+    public ReviewService(IReviewRepository reviewRepo, IProductService productService)
     {
-        _db = db;
+        _reviewRepo = reviewRepo;
         _productService = productService;
     }
 
@@ -49,9 +48,9 @@ public class ReviewService : IReviewService
                 return (true, null);
             }
 
-            _db.Reviews.Add(new Review
+            _reviewRepo.Add(new Review
             {
-                Id = GetNextReviewId(),
+                Id = _reviewRepo.GetNextId(),
                 CustomerId = customerId,
                 ProductId = productId,
                 Rating = rating,
@@ -70,10 +69,7 @@ public class ReviewService : IReviewService
     {
         try
         {
-            return _db.Reviews
-                .Where(r => r.ProductId == productId)
-                .OrderByDescending(r => r.CreatedAt)
-                .ToList();
+            return _reviewRepo.GetByProduct(productId);
         }
         catch (Exception)
         {
@@ -85,8 +81,7 @@ public class ReviewService : IReviewService
     {
         try
         {
-            return _db.Reviews
-                .FirstOrDefault(r => r.CustomerId == customerId && r.ProductId == productId);
+            return _reviewRepo.GetByCustomerAndProduct(customerId, productId);
         }
         catch (Exception)
         {
@@ -98,7 +93,7 @@ public class ReviewService : IReviewService
     {
         try
         {
-            var reviews = _db.Reviews.Where(r => r.ProductId == productId).ToList();
+            var reviews = _reviewRepo.GetByProduct(productId);
             if (reviews.Count == 0)
                 return null;
             return reviews.Average(r => r.Rating);
@@ -113,18 +108,11 @@ public class ReviewService : IReviewService
     {
         try
         {
-            return _db.Reviews.Count(r => r.ProductId == productId);
+            return _reviewRepo.CountByProduct(productId);
         }
         catch (Exception)
         {
             return 0;
         }
-    }
-
-    private int GetNextReviewId()
-    {
-        if (_db.Reviews.Count == 0)
-            return 1;
-        return _db.Reviews.Max(r => r.Id) + 1;
     }
 }

@@ -1,30 +1,41 @@
 using SwiftCart.Application.Interfaces;
 using SwiftCart.Domain.Entities;
 using SwiftCart.Domain.Enums;
-using SwiftCart.Infrastructure.Data;
 
 namespace SwiftCart.Application.Services;
 
 public class OrderService : IOrderService
 {
-    private readonly AppDb _db;
+    private readonly IOrderRepository _orderRepo;
+    private readonly IPaymentRepository _paymentRepo;
     private readonly ICartService _cartService;
-    private readonly IWalletService _walletService;
     private readonly IProductService _productService;
+    private readonly List<IOrderObserver> _observers = new();
 
-    public OrderService(AppDb db, ICartService cartService, IWalletService walletService, IProductService productService)
+    public OrderService(IOrderRepository orderRepo, IPaymentRepository paymentRepo, ICartService cartService, IProductService productService)
     {
-        _db = db;
+        _orderRepo = orderRepo;
+        _paymentRepo = paymentRepo;
         _cartService = cartService;
-        _walletService = walletService;
         _productService = productService;
     }
 
+    public void Subscribe(IOrderObserver observer)
+    {
+        if (!_observers.Contains(observer))
+            _observers.Add(observer);
+    }
+
+    public void Unsubscribe(IOrderObserver observer)
+    {
+        _observers.Remove(observer);
+    }
+
     /// <summary>
-    /// Places an order from the customer's cart. Returns (true, order, null) on success,
-    /// or (false, null, errorMessage) on failure.
+    /// Places an order from the customer's cart using the supplied payment strategy.
+    /// Returns (true, order, null) on success, or (false, null, errorMessage) on failure.
     /// </summary>
-    public (bool Success, Order? Order, string? ErrorMessage) PlaceOrder(int customerId)
+    public (bool Success, Order? Order, string? ErrorMessage) PlaceOrder(int customerId, IPaymentStrategy paymentStrategy)
     {
         try
         {
@@ -43,16 +54,13 @@ public class OrderService : IOrderService
                 total += item.Quantity * item.UnitPrice;
             }
 
-            if (_walletService.GetBalance(customerId) < total)
-                return (false, null, "Insufficient wallet balance.");
+            var (paySuccess, payError) = paymentStrategy.Pay(customerId, total);
+            if (!paySuccess)
+                return (false, null, payError ?? "Payment failed.");
 
-            if (!_walletService.DeductFunds(customerId, total))
-                return (false, null, "Failed to deduct funds from wallet.");
-
-            int orderId = GetNextOrderId();
             var order = new Order
             {
-                Id = orderId,
+                Id = _orderRepo.GetNextId(),
                 CustomerId = customerId,
                 TotalAmount = total,
                 Status = OrderStatus.Pending,
@@ -60,7 +68,7 @@ public class OrderService : IOrderService
                 Items = new List<OrderItem>()
             };
 
-            int orderItemId = GetNextOrderItemId();
+            int orderItemId = _orderRepo.GetNextItemId();
             foreach (var item in cart.Items)
             {
                 order.Items.Add(new OrderItem
@@ -73,24 +81,25 @@ public class OrderService : IOrderService
                 });
                 if (!_productService.DeductStock(item.ProductId, item.Quantity))
                 {
-                    _walletService.AddFunds(customerId, total);
+                    paymentStrategy.Refund(customerId, total);
                     return (false, null, "Failed to reserve stock. Please try again.");
                 }
             }
 
-            _db.Orders.Add(order);
+            _orderRepo.Add(order);
 
-            _db.Payments.Add(new Payment
+            _paymentRepo.Add(new Payment
             {
-                Id = GetNextPaymentId(),
+                Id = _paymentRepo.GetNextId(),
                 OrderId = order.Id,
                 CustomerId = customerId,
                 Amount = total,
-                Method = "Wallet",
+                Method = paymentStrategy.MethodName,
                 PaidAt = DateTime.UtcNow
             });
 
             cart.Items.Clear();
+            NotifyOrderPlaced(order);
             return (true, order, null);
         }
         catch (Exception)
@@ -99,57 +108,35 @@ public class OrderService : IOrderService
         }
     }
 
-    public List<Order> GetOrdersByCustomer(int customerId)
-    {
-        return _db.Orders
-            .Where(o => o.CustomerId == customerId)
-            .OrderByDescending(o => o.CreatedAt)
-            .ToList();
-    }
+    public List<Order> GetOrdersByCustomer(int customerId) =>
+        _orderRepo.GetByCustomer(customerId);
 
-    public Order? GetOrderById(int orderId)
-    {
-        return _db.Orders.FirstOrDefault(o => o.Id == orderId);
-    }
+    public Order? GetOrderById(int orderId) =>
+        _orderRepo.GetById(orderId);
 
-    public List<Order> GetAllOrders()
-    {
-        return _db.Orders.OrderByDescending(o => o.CreatedAt).ToList();
-    }
+    public List<Order> GetAllOrders() =>
+        _orderRepo.GetAll();
 
     public bool UpdateOrderStatus(int orderId, OrderStatus status)
     {
-        var order = _db.Orders.FirstOrDefault(o => o.Id == orderId);
+        var order = _orderRepo.GetById(orderId);
         if (order == null)
             return false;
+        var previousStatus = order.Status;
         order.Status = status;
+        NotifyOrderStatusChanged(order, previousStatus);
         return true;
     }
 
-    private int GetNextOrderId()
+    private void NotifyOrderPlaced(Order order)
     {
-        if (_db.Orders == null || _db.Orders.Count == 0)
-            return 1;
-        return _db.Orders.Max(o => o.Id) + 1;
+        foreach (var observer in _observers)
+            observer.OnOrderPlaced(order);
     }
 
-    private int GetNextPaymentId()
+    private void NotifyOrderStatusChanged(Order order, OrderStatus previousStatus)
     {
-        if (_db.Payments == null || _db.Payments.Count == 0)
-            return 1;
-        return _db.Payments.Max(p => p.Id) + 1;
-    }
-
-    private int GetNextOrderItemId()
-    {
-        if (_db.Orders == null || _db.Orders.Count == 0)
-            return 1;
-        int max = _db.Orders
-            .Where(o => o.Items != null)
-            .SelectMany(o => o.Items)
-            .Select(i => i.Id)
-            .DefaultIfEmpty(0)
-            .Max();
-        return max + 1;
+        foreach (var observer in _observers)
+            observer.OnOrderStatusChanged(order, previousStatus);
     }
 }

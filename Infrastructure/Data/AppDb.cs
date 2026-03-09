@@ -11,4 +11,5 @@ public class AppDb
     public List<Order> Orders { get; } = new();
     public List<Review> Reviews { get; } = new();
     public List<Payment> Payments { get; } = new();
+    public List<Notification> Notifications { get; } = new();
 }
