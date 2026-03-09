@@ -76,6 +76,17 @@ public class OrderService
         }
 
         _db.Orders.Add(order);
+
+        _db.Payments.Add(new Payment
+        {
+            Id = GetNextPaymentId(),
+            OrderId = order.Id,
+            CustomerId = customerId,
+            Amount = total,
+            Method = "Wallet",
+            PaidAt = DateTime.UtcNow
+        });
+
         cart.Items.Clear();
         return (true, order, null);
     }
@@ -112,6 +123,13 @@ public class OrderService
         if (_db.Orders == null || _db.Orders.Count == 0)
             return 1;
         return _db.Orders.Max(o => o.Id) + 1;
+    }
+
+    private int GetNextPaymentId()
+    {
+        if (_db.Payments == null || _db.Payments.Count == 0)
+            return 1;
+        return _db.Payments.Max(p => p.Id) + 1;
     }
 
     private int GetNextOrderItemId()
